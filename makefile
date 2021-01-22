@@ -10,7 +10,7 @@ help : Makefile
 
 ## ukb.db: generate ukb.db
 ukb.db : $(ALL_SETUP_FILES)
-	bash setup/setup_renv.R
+	RScript setup/setup_renv.R
 	bash setup/setup_caliber.sh
 	bash setup/setup_ukb_primarycare_codings.sh
 
@@ -18,5 +18,6 @@ ukb.db : $(ALL_SETUP_FILES)
 .PHONY : clean
 clean :
 	rm -i ukb.db
-	rm -ri caliber/data/
-	rm -ri ukb_primarycare_codings/data/
+	rm -r renv/library/
+	rm -r caliber/data/
+	rm -r ukb_primarycare_codings/data/
