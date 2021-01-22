@@ -1,0 +1,760 @@
+---
+title: "UKB primary care DM/DR phenotypes and case-control pairings"
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged
+    toc: true
+    toc_float:
+      toc_collapsed: true
+    toc_depth: 3
+    number_sections: true
+    theme: lumen
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Overview
+
+***NOTE: RUNNING THIS NOTEBOOK TAKES A WHILE (~10 MINS)***
+
+Aim: 
+
+1. To identify ppts with DM/DR in the UKB primary care dataset 
+2. Extract important variables for these ppts:
+  - Type of DM
+  - Date of DM diagnosis
+  - Earliest date of DR 'events'
+3. Mutate indicator columns and corresponding event(/censor) dates for various potential case-control pairings
+
+Steps:
+
+- Import eids with DM/DR codes to R using SQL
+- Clean. Remove rows with nonsense dates:
+
+  - 01/01/1901
+  - 02/02/1902
+  - 03/03/1903
+  - 07/07/2037
+  
+- Convert event_dt column to date format
+- DM:
+
+  - Determine whether T1/T2/T1+T2 codes present
+  - Date of DM diagnosis
+  
+- DR:
+
+  - Extract first and last dates for each DR event
+  - Define case_control pairings
+  
+- Save clean dataset in .Rdata format
+- Explore
+  
+Notes:
+  
+- See also `case_control_ukb_pc_dr_gwas.Rmd` under 'Year1' PhD folder
+
+# Setup
+
+- Connect to database
+
+```{r}
+library(DBI)
+con <- dbConnect(RSQLite::SQLite(), "/Users/alasdair/Documents/Data/UKB/ICS/ukb_dr_gwas.db")
+```
+
+- Load packages
+
+```{r}
+library(tidyverse)
+```
+
+- Source scripts
+
+```{r}
+source("../r_scripts/ukb_pc_tools.R")
+source("../r_scripts/ukb_pc_dr_gwas_tools.R")
+source("../r_scripts/my_skim.R")
+```
+
+# Import tables from `ukb_dr_gwas.db` to R
+
+## DM/DR ppts from gp_clinical
+
+```{sql connection=con, output.var='gp_clinical_dm_dr'}
+/* Common table expression for all DM and DR codes combined */
+WITH dm_dr_codes AS
+(
+SELECT dm.code FROM FINAL_dm_codes dm
+UNION
+SELECT dr.code FROM FINAL_dr_codes dr
+)
+
+/* Filter for eid's in gp_clinical who have any of these codes */
+SELECT * 
+FROM gp_clinical
+WHERE 
+    read_2 IN (SELECT code FROM dm_dr_codes)
+  OR
+    read_3 IN (SELECT code FROM dm_dr_codes);
+```
+
+## FINAL_dm_codes and FINAL_dr_codes
+
+```{sql connection=con, output.var='FINAL_dm_codes'}
+SELECT * FROM FINAL_dm_codes;
+```
+
+```{sql connection=con, output.var='FINAL_dr_codes'}
+SELECT * FROM FINAL_dr_codes;
+```
+
+## Unique eid's only
+
+```{sql connection=con, output.var='gp_clinical_eids'}
+SELECT DISTINCT eid FROM gp_clinical;
+```
+
+## Disconnect from database
+
+```{r}
+dbDisconnect(conn = con)
+```
+
+# Remove 'nonsense' dates
+
+```{r}
+# make a copy since it takes a while to import from sql
+gp_clinical_dm_dr_filtered <- gp_clinical_dm_dr
+
+# filter out rows with 'nonsense' dates
+gp_clinical_dm_dr_filtered <- gp_clinical_dm_dr_filtered %>% 
+  filter(!(event_dt %in% c('01/01/1901', 
+                           '02/02/1902',
+                           '03/03/1903',
+                           '07/07/2037')))
+```
+
+# Convert event_dt to date format
+
+```{r}
+gp_clinical_dm_dr_filtered  <- gp_clinical_dm_dr_filtered %>% 
+  mutate(event_dt = lubridate::dmy(event_dt))
+```
+
+# Extract event dates into tidy dataframe
+
+- Using the ukb_gpclin_phenotype_dates_multi() function from `ukb_pc_tools.R`, I can mutate max and min event dates for multiple phenotypes (T1DM/T2DM & all DR 'sub_phenotypes'). 
+- This creates a single dataframe where the first column is 'eid' and subsequent columns are the max/min date for each phenotype
+- I first create a named list of functions (max/min) and then process the 'sub_categories' in `FINAL_dm_codes` and `FINAL_dr_codes` separately
+- **Note: the `event_dt` column must be in date format**
+
+## Setup
+
+- List of functions to extract dates
+
+```{r}
+# named list of functions (must be unique)
+list_of_functions <- list(which.min, which.max)
+names(list_of_functions) <- c('min', 'max')
+```
+
+## Diabetes
+
+```{r}
+dm_dates_gp_clinical <- ukb_gpclin_phenotype_dates_multi(ukb_gpclin_df = gp_clinical_dm_dr_filtered,
+                                 functions_list = list_of_functions,
+                                 read_codes_df = FINAL_dm_codes)
+```
+
+## Diabetic retinopathy
+
+```{r}
+dr_dates_gp_clinical <- ukb_gpclin_phenotype_dates_multi(ukb_gpclin_df = gp_clinical_dm_dr_filtered,
+                                 functions_list = list_of_functions,
+                                 read_codes_df = FINAL_dr_codes)
+```
+
+## Combine into `dm_dr_dates_gp_clinical`
+
+```{r}
+dm_dr_dates_gp_clinical <- gp_clinical_eids %>% # df with a single column 'eid', containing all unique eids in gp_clinical.txt
+  left_join(dm_dates_gp_clinical, by = 'eid') %>% 
+  left_join(dr_dates_gp_clinical, by = 'eid')
+```
+
+# Case-control pairings
+
+General requirements:
+
+  - Cases and controls should be mutually exclusive
+  - Case:
+    - *Minimum* date meeting case definition
+  - Control:
+    - *Maximum* date meeting control definition
+    - **must also NOT be a case (or in any of the remaining categories)**
+  - ***NOTE: for cases, 'R2' means 'R2 or worse' e.g. for `R0_M0_P0_vs_R2_M1any_P1`, 'R2_M1any_P1' means cases are R2/R3/M1(any or severe) (P1 is included in the definition of R3)
+  
+Potential case-control pairings: see `names_for_list` under 'Initiate list' below
+  
+This is how the different DR subcategories are labelled in `FINAL_dr_codes`:
+
+```{r}
+unique(FINAL_dr_codes$sub_category)
+```
+
+  - ***Note: as there were no cases for 'r3_m1_unspecified', this will not be  included in the following steps***
+
+Plan:
+
+- Make a list of case-control pairings (`dr_case_control_pairings_list`), the DR subcategories they represent and their corresponding date columns
+- Make a function (`mutate_case_control_cols()`) to mutate columns for case/control status and case/control dates for each case-control pairing by looping through `dr_case_control_pairings_list`
+- I can therefore add extra pairings, if needed, by appending to `dr_case_control_pairings_list`
+
+***GUIDE IF ADDING MORE PAIRINGS:***
+
+- Add pairing to `names_for_list` under 'Initiate list'
+- Add corresponding subsection to 'Populate list'. Guidance for this:
+
+  - `case_cols` and `control_cols` are the requirements for cases and controls
+  - For example of `case_exclusions_cols`, see `R0_M0_P0_vs_R2_M0_P1`. Here I am selecting cases with R2 or R3 who *do not* have evidence of M1
+  - `control_exclusion_cols` are basically always the same, depending on whether R1 is included or not. *Note: I could have made `other_cols` equivalent to `all_dr_subcategories` minus `case_cols`, `case_exclusion_cols` and `control_cols`. But I realised this later on, and this way does force me to manually check more(?)*
+  - `dr_unspecified` is only really useful for `R0_M0_P0_vs_AnyDR`
+  
+- Check for errors manually and using the code under section 'QC for list of case-control pairings'
+
+## Create a list of case-control pairings
+
+- These steps requires very careful manual checking
+- See comments under 'Initiate list' in particular, and guidance in the section above
+
+### Initiate list
+
+```{r}
+# vector of all possible DR subcategories
+all_dr_subcategories <- c(
+  'dr_unspecified',
+  'no_dr',
+  'r1',
+  'r2',
+  'r3',
+  'm1_severe',
+  'm1_unspecified'
+  # 'r3_m1_unspecified' # COMMENTED OUT AS THERE ARE NO 'CASES' OF THIS
+)
+
+# names of case-control pairings
+names_for_list <- c(
+  ## cases: R2 and above, including any M1 (some cases will be 'M1 unspecified' only)
+  'R0_M0_P0_vs_R2_M1any_P1',
+  'R1_M0_P0_vs_R2_M1any_P1',
+  
+  # cases: R3 including any M1 (some cases will be 'M1 unspecified' only)
+  'R0_M0_P0_vs_R3_M1any_P1',
+  'R1_M0_P0_vs_R3_M1any_P1',
+  
+  # cases R2 and above but NOT M1
+  'R0_M0_P0_vs_R2_M0_P1',
+  'R1_M0_P0_vs_R2_M0_P1',
+  
+  # cases R3 but NOT M1
+  'R0_M0_P0_vs_R3_M0_P1',
+  'R1_M0_P0_vs_R3_M0_P1',
+  
+  # cases M1 but NOT R2/R3
+  'R0_M0_P0_vs_R1_M1any_P0',
+  'R1_M0_P0_vs_R1_M1any_P0',
+  
+  ######
+  # cases R2/R3 +/- M1any (i.e. a ppt with M1 is only a case if they also have R2 or above)
+  'R0_M0_P0_vs_R2_M1anyifR2_P1',
+  'R1_M0_P0_vs_R2_M1anyifR2_P1',
+  
+  # cases R2/R3/M1severe (i.e. a ppt may have M1any, but must be also R2/R3/M1severe)
+  'R0_M0_P0_vs_R2_M1severe_P1',
+  'R1_M0_P0_vs_R2_M1severe_P1',
+  
+  # cases: R3 or M1 severe
+  'R0_M0_P0_vs_R3_M1severe_P1',
+  'R1_M0_P0_vs_R3_M1severe_P1',
+  
+  # R0 vs Any DR (R1 and above)
+  'R0_M0_P0_vs_AnyDR'
+)
+
+# create named list of case-control pairings
+dr_case_control_pairings_list <- vector(mode = 'list', 
+                                        length = length(names_for_list))
+
+names(dr_case_control_pairings_list) <- names_for_list
+
+# names for sublists within dr_case_control_pairings_list
+names_for_sublists <- c(
+  # case_cols
+  'case_cols', 
+  'case_date_cols',
+  'case_exclusion_cols', # e.g. case == 'R3' but NOT 'M1', or M1 severe but not M1 unspecified
+  
+  # control_cols
+  'control_cols',
+  'control_date_cols',
+  'other_cols', # any columns not specified by case/control cols
+  'control_exclusion_cols', # should be case_cols + case_exclusion_cols + other_cols
+  #...CHECK THIS CAREFULLY
+  
+  # combined subcategories: should equal all_dr_subcategories
+  'combined_subcategories' # should be control_cols + control_exclusion_cols
+  #...CHECK THIS CAREFULLY
+)
+```
+
+### Populate list
+
+#### R0_M0_P0_vs_R2_M1any_P1
+
+```{r}
+# populate list
+## 'R0_M0_P0_vs_R2_M1any_P1'
+dr_case_control_pairings_list[['R0_M0_P0_vs_R2_M1any_P1']] <- list(
+  case_cols <- c('r2', 'r3', 'm1_severe', 'm1_unspecified'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'r1'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R1_M0_P0_vs_R2_M1any_P1
+
+```{r}
+## 'R1_M0_P0_vs_R2_M1any_P1'
+dr_case_control_pairings_list[['R1_M0_P0_vs_R2_M1any_P1']] <- list(
+  case_cols <- c('r2', 'r3', 'm1_severe', 'm1_unspecified'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr', 'r1'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R0_M0_P0_vs_R3_M1any_P1
+
+```{r}
+## 'R0_M0_P0_vs_R3_M1any_P1'
+dr_case_control_pairings_list[['R0_M0_P0_vs_R3_M1any_P1']] <- list(
+  case_cols <- c('r3', 'm1_severe', 'm1_unspecified'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'r2', 'r1'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R1_M0_P0_vs_R3_M1any_P1
+
+```{r}
+## 'R1_M0_P0_vs_R3_M1any_P1'
+dr_case_control_pairings_list[['R1_M0_P0_vs_R3_M1any_P1']] <- list(
+  case_cols <- c('r3', 'm1_severe', 'm1_unspecified'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr', 'r1'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'r2'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R0_M0_P0_vs_R2_M0_P1
+
+```{r}
+## 'R0_M0_P0_vs_R2_M0_P1'
+dr_case_control_pairings_list[['R0_M0_P0_vs_R2_M0_P1']] <- list(
+  case_cols <- c('r2', 'r3'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- c('m1_unspecified', 'm1_severe'),
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'r1'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R1_M0_P0_vs_R2_M0_P1
+
+```{r}
+## 'R1_M0_P0_vs_R2_M0_P1'
+dr_case_control_pairings_list[['R1_M0_P0_vs_R2_M0_P1']] <- list(
+  case_cols <- c('r2', 'r3'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- c('m1_unspecified', 'm1_severe'),
+  control_cols <- c('no_dr', 'r1'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R0_M0_P0_vs_R3_M0_P1
+
+```{r}
+## 'R0_M0_P0_vs_R3_M0_P1'
+dr_case_control_pairings_list[['R0_M0_P0_vs_R3_M0_P1']] <- list(
+  case_cols <- c('r3'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- c('m1_unspecified', 'm1_severe'),
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'r1', 'r2'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R1_M0_P0_vs_R3_M0_P1
+
+```{r}
+## 'R1_M0_P0_vs_R3_M0_P1'
+dr_case_control_pairings_list[['R1_M0_P0_vs_R3_M0_P1']] <- list(
+  case_cols <- c('r3'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- c('m1_unspecified', 'm1_severe'),
+  control_cols <- c('no_dr', 'r1'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'r2'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R0_M0_P0_vs_R1_M1any_P0
+
+```{r}
+## 'R0_M0_P0_vs_R1_M1any_P0'
+dr_case_control_pairings_list[['R0_M0_P0_vs_R1_M1any_P0']] <- list(
+  case_cols <- c('m1_unspecified', 'm1_severe'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- c('r2', 'r3'),
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'r1'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R1_M0_P0_vs_R1_M1any_P0
+
+```{r}
+## 'R1_M0_P0_vs_R1_M1any_P0'
+dr_case_control_pairings_list[['R1_M0_P0_vs_R1_M1any_P0']] <- list(
+  case_cols <- c('m1_unspecified', 'm1_severe'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- c('r2', 'r3'),
+  control_cols <- c('no_dr', 'r1'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R0_M0_P0_vs_R2_M1anyifR2_P1
+
+- Cases R2/R3 +/- M1any (i.e. a ppt with M1 is only a case if they also have R2 or above)
+  
+```{r}
+## 'R0_M0_P0_vs_R2_M1anyifR2_P1'
+dr_case_control_pairings_list[['R0_M0_P0_vs_R2_M1anyifR2_P1']] <- list(
+  case_cols <- c('r2', 'r3'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'm1_unspecified', 'm1_severe', 'r1'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+  
+#### R1_M0_P0_vs_R2_M1anyifR2_P1
+
+```{r}
+## 'R1_M0_P0_vs_R2_M1anyifR2_P1'
+dr_case_control_pairings_list[['R1_M0_P0_vs_R2_M1anyifR2_P1']] <- list(
+  case_cols <- c('r2', 'r3'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr', 'r1'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'm1_unspecified', 'm1_severe'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R0_M0_P0_vs_R2_M1severe_P1
+
+- cases R2/R3/M1severe (i.e. a ppt may have M1any, but must be also R2/R3/M1severe)
+
+```{r}
+## 'R0_M0_P0_vs_R2_M1severe_P1'
+dr_case_control_pairings_list[['R0_M0_P0_vs_R2_M1severe_P1']] <- list(
+  case_cols <- c('r2', 'r3', 'm1_severe'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'm1_unspecified', 'r1'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R1_M0_P0_vs_R2_M1severe_P1
+  
+```{r}
+## 'R1_M0_P0_vs_R2_M1severe_P1'
+dr_case_control_pairings_list[['R1_M0_P0_vs_R2_M1severe_P1']] <- list(
+  case_cols <- c('r2', 'r3', 'm1_severe'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr', 'r1'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'm1_unspecified'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R0_M0_P0_vs_R3_M1severe_P1
+
+- cases: R3 or M1 severe
+
+```{r}
+## 'R0_M0_P0_vs_R3_M1severe_P1'
+dr_case_control_pairings_list[['R0_M0_P0_vs_R3_M1severe_P1']] <- list(
+  case_cols <- c('r3', 'm1_severe'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'm1_unspecified', 'r2', 'r1'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R1_M0_P0_vs_R3_M1severe_P1
+
+```{r}
+## 'R1_M0_P0_vs_R3_M1severe_P1'
+dr_case_control_pairings_list[['R1_M0_P0_vs_R3_M1severe_P1']] <- list(
+  case_cols <- c('r3', 'm1_severe'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr', 'r1'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- c('dr_unspecified', 'm1_unspecified', 'r2'),
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+#### R0_M0_P0_vs_AnyDR
+
+```{r}
+## 'R0_M0_P0_vs_AnyDR'
+dr_case_control_pairings_list[['R0_M0_P0_vs_AnyDR']] <- list(
+  case_cols <- c('m1_severe', 'm1_unspecified', 'r1', 'r2', 'r3', 'dr_unspecified'),
+  case_date_cols <- paste0('min_date_', case_cols),
+  case_exclusion_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_cols <- c('no_dr'),
+  control_date_cols <- paste0('max_date_', control_cols),
+  other_cols <- vector(mode = 'character', length = 0L), # empty vector
+  control_exclusion_cols <- c(case_cols, case_exclusion_cols, other_cols),
+  combined_subcategories <- c(control_cols, control_exclusion_cols)
+)
+```
+
+### Add names to sublists
+
+```{r}
+# add names to sublists
+for (sublist in names_for_list) {
+  names(dr_case_control_pairings_list[[sublist]]) <- names_for_sublists
+}
+```
+
+### QC for list of case-control pairings
+
+- Check that all items in the list capture *all* DR subcategories uniquely
+- *...this does not work brilliantly e.g. if the sublists are unnamed then the first 2 'union' logic statements still return 'TRUE'. But it just about works I think*
+- ...I can check individual errors by running each logic statement seprately: unhash the hashed code
+
+```{r}
+errors <- vector(mode = 'character', length = 0L)
+
+for (pairing in names(dr_case_control_pairings_list)) {
+  # state which pairing is being checked
+  cat(
+    '\n######################\n',
+    '## CHECKING ',
+    pairing,
+    ' ##',
+    '\n######################\n'
+  )
+  
+  # check whether all subcategories are captured by combined_subcategories
+  if (## check all subcategories identified (with no extras)
+    (all(
+      sort(
+        union(
+          dr_case_control_pairings_list[[pairing]]$combined_subcategories,
+          all_dr_subcategories
+        )
+      ) ==
+      sort(all_dr_subcategories)
+    )) &
+    
+    # (all(
+    #   sort(
+    #     union(
+    #       dr_case_control_pairings_list[['R0_M0_P0_vs_R2_M1severe_P1']]$combined_subcategories,
+    #       all_dr_subcategories
+    #     )
+    #   ) ==
+    #   sort(all_dr_subcategories)
+    # ))
+    
+    (all(
+      sort(
+        union(
+          dr_case_control_pairings_list[[pairing]]$combined_subcategories,
+          all_dr_subcategories
+        )
+      ) ==
+      sort(dr_case_control_pairings_list[[pairing]]$combined_subcategories)
+    )) &
+    
+    # (all(
+    #   sort(
+    #     union(
+    #       dr_case_control_pairings_list[['R0_M0_P0_vs_R2_M1severe_P1']]$combined_subcategories,
+    #       all_dr_subcategories
+    #     )
+    #   ) ==
+    #   sort(dr_case_control_pairings_list[['R0_M0_P0_vs_R2_M1severe_P1']]$combined_subcategories)
+    # ))
+    
+    # check no overlap between case_cols, control_cols and control_exclusion_cols
+    (
+      length(dr_case_control_pairings_list[[pairing]]$combined_subcategories) ==
+      length(all_dr_subcategories)
+      
+      # length(dr_case_control_pairings_list[['R1_M0_P0_vs_R2_M1severe_P1']]$combined_subcategories) ==
+      # length(all_dr_subcategories)
+    )) {
+    cat('\nSuccess! All DR subcategories captured uniquely by this pairing\n')
+  } else {
+    errors <- c(errors, pairing)
+    cat('\nERROR! CHECK ME!!\n')
+  }
+}
+
+cat('Number of pairings with an error:', length(errors))
+cat('Pairings to check:', errors)
+cat('Are all pairings in list unique?', length(names(dr_case_control_pairings_list)) == length(unique(names(dr_case_control_pairings_list))))
+```
+
+## Mutate case-control pairing columns
+
+```{r}
+source("../r_scripts/ukb_pc_dr_gwas_tools.R")
+
+dm_dr_dates_gp_clinical_case_control <- mutate_case_control_cols(
+  ukb_gpclin_summarised_df = dm_dr_dates_gp_clinical,
+  case_control_pairings_list = dr_case_control_pairings_list)
+```
+
+# Final steps and save as .Rdata
+
+## Mutate 'DM_type' column and assess numbers
+
+```{r}
+# mutate column
+dm_dr_dates_gp_clinical_case_control <- dm_dr_dates_gp_clinical_case_control %>% 
+  mutate(DM_type = case_when(
+    (T1DM == TRUE) & (T2DM == FALSE) ~ 'T1DM',
+    (T1DM == FALSE) & (T2DM == TRUE) ~ 'T2DM',
+    (T1DM == TRUE) & (T2DM == TRUE) ~ 'T1DM & T2DM',
+    (T1DM == FALSE) & (T2DM == FALSE) ~ 'No DM codes'
+  ))
+
+# assess numbers
+cat('\nNumber of T1/T2 (or both) in UKB primary care data:\n')
+table(dm_dr_dates_gp_clinical_case_control$DM_type)
+```
+
+## Mutate column indicating linked primary care data
+
+```{r}
+dm_dr_dates_gp_clinical_case_control <- dm_dr_dates_gp_clinical_case_control %>% 
+  mutate(linked_primary_care_data = TRUE)
+```
+
+## Save as `ukb_pc_summarised.Rdata`
+
+```{r}
+save(dm_dr_dates_gp_clinical_case_control,
+     file = '../data/ukb_pc_summarised.Rdata')
+```
+
+# Explore (a little)
+
+## Summarise DR subtypes by DM type
+
+```{r}
+# cols to select
+cols_to_select <- c('eid', 'DM_type', all_dr_subcategories)
+
+# group_by DM type and summarise
+dm_dr_dates_gp_clinical_case_control %>% 
+  select(all_of(cols_to_select)) %>% 
+  # filter(!is.na(DM_type)) %>% 
+  group_by(DM_type) %>% 
+  my_skim()
+```
+
+## Summarise case-control pairings by DM type
+
+- Many potential 'cases' have no DM code or mixed T1/T2 codes
+
+```{r}
+#select only indicator cols to summarise
+case_control_indicator_cols <- subset(names(dm_dr_dates_gp_clinical_case_control),
+                                      subset = grepl(pattern = 'CASE_R|CONTROL_R',
+                                                     x = names(dm_dr_dates_gp_clinical_case_control)))
+
+case_control_indicator_cols <- c('DM_type', case_control_indicator_cols)
+
+# group_by DM type and summarise
+dm_dr_dates_gp_clinical_case_control %>% 
+  select(all_of(case_control_indicator_cols)) %>% 
+  # filter(!is.na(DM_type)) %>%
+  group_by(DM_type) %>% 
+  my_skim()
+```
