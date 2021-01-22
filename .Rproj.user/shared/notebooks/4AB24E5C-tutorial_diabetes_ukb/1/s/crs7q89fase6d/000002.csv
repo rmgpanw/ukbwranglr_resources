@@ -1,7 +1,21 @@
-"0","# install.packages(""devtools"")"
-"0","devtools::install_github(""rmgpanw/ukbwranglr"")"
-"2","Skipping install of 'ukbwranglr' from a github remote, the SHA1 (34acf794) has not changed since last install.
-  Use `force = TRUE` to force installation
+"0","# install.packages(""devtools"")
+devtools::install_github(""rmgpanw/ukbwranglr"")
 "
-"0","library(ukbwranglr)"
-"0","library(tidyverse)"
+"2","Downloading GitHub repo rmgpanw/ukbwranglr@HEAD
+"
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"2","Installing 2 packages: repr, skimr
+"
+"2","Installing packages into ‘/Users/alasdair/OneDrive - University College London/Lenovo backup 181219/WellcomePhD/Year2/ukbwranglr_resources/renv/library/R-4.0/x86_64-apple-darwin17.0’
+(as ‘lib’ is unspecified)
+"
+"1","
+"
+"1",""
+"1","  There is a binary version available but the source version is later"
+"1",""
+"1",":
+"

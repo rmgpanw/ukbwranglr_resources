@@ -1,7 +1,0 @@
-"0","# install.packages(""devtools"")"
-"0","devtools::install_github(""rmgpanw/ukbwranglr"")"
-"2","Skipping install of 'ukbwranglr' from a github remote, the SHA1 (34acf794) has not changed since last install.
-  Use `force = TRUE` to force installation
-"
-"0","library(ukbwranglr)"
-"0","library(tidyverse)"
