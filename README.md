@@ -18,7 +18,7 @@ This takes ~3-5 minutes to run and will:
     - Phenotype code lists from [CALIBER](https://github.com/spiros/chronological-map-phenotypes) (table name: `'phenotype_codes'`)
     - Code mapping tables provided by UK Biobank ([resource 592](https://biobank.ndph.ox.ac.uk/showcase/refer.cgi?id=592))
 
-The following command will remove `ukb.db` and all downloaded UKB and CALIBER files:
+The following command will remove `ukb.db`, all packages installed in `renv`, and all files downloaded from UKB and CALIBER:
 
 ```bash
 make clean
