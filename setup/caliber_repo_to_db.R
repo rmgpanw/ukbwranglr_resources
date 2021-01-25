@@ -14,6 +14,22 @@ library(RSQLite)
 # write this to a SQLite database.
 
 # CONSTANTS -------------------------------------------------------------
+# path to database
+config <- configr::read.config("config.ini")
+UKB_DB <- config$PATHS$UKB_DB
+
+# default database location if not specified by config file is root directory of
+# repo
+if (is.null(UKB_DB)) {
+  UKB_DB <- "ukb.db"
+}
+
+# ERROR IF DATABASE ALREADY EXISTS
+if (file.exists(UKB_DB)) {
+  stop("Error! Database already exists at location ", UKB_DB)
+}
+
+# caliber paths
 CALIBER_ROOT <- "caliber/data/chronological-map-phenotypes-master"
 CALIBER_PRIMARY <- "caliber/data/chronological-map-phenotypes-master/primary_care"
 CALIBER_SECONDARY <- "caliber/data/chronological-map-phenotypes-master/secondary_care"
@@ -126,7 +142,7 @@ result <- result %>%
   mutate(phenotype_source = "caliber")
 
 # write to database
-con <- DBI::dbConnect(RSQLite::SQLite(), "ukb.db")
+con <- DBI::dbConnect(RSQLite::SQLite(), UKB_DB)
 
 DBI::dbWriteTable(
   conn = con,
