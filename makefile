@@ -13,6 +13,7 @@ ukb.db : $(ALL_SETUP_FILES)
 	RScript setup/setup_renv.R
 	bash setup/setup_caliber.sh
 	bash setup/setup_ukb_primarycare_codings.sh
+	RScript setup/ukb_data_dict_codings_to_db.R
 
 ## clean: remove ukb.db
 .PHONY : clean
