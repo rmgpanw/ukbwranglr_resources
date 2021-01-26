@@ -8,21 +8,8 @@
 # files are saved locally)
 
 # CONSTANTS -------------------------------------------------------------
-
-# path to database
-config <- configr::read.config("config.ini")
-UKB_DB <- config$PATHS$UKB_DB
-
-# default database location if not specified by config file is root directory of
-# repo
-if (is.null(UKB_DB)) {
-  UKB_DB <- "ukb.db"
-}
-
-# ERROR IF DATABASE ALREADY EXISTS
-if (file.exists(UKB_DB)) {
-  stop("Error! Database already exists at location ", UKB_DB)
-}
+# path to write database
+UKB_DB <- "ukb.db"
 
 # urls for UKB data dictionary and codings file
 UKB_DATA_DICTIONARY_URL <- "https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.tsv"

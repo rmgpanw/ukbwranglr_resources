@@ -25,17 +25,6 @@ The following command will remove `ukb.db`, all packages installed in `renv`, an
 make clean
 ```
 
-To specify a different location to build the database, before running the `make` command, create a config file in the root directory of this repo based on the following template:
-
-```
-# file paths
-[PATHS]
-# path to sqlite database where tables will be written
-UKB_DB = /PATH/TO/MY/UKB/DATABASE
-```
-
-> NOTE: this will raise an error if a database already exists at the specified location.
-
 # Useful links
 
 - [UKB data dictionary and code mapping files](https://biobank.ctsu.ox.ac.uk/crystal/exinfo.cgi?src=accessing_data_guide)

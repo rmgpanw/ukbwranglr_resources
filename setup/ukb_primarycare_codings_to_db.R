@@ -9,20 +9,8 @@ library(readxl)
 
 # CONSTANTS -------------------------------------------------------------
 
-# path to database
-config <- configr::read.config("config.ini")
-UKB_DB <- config$PATHS$UKB_DB
-
-# default database location if not specified by config file is root directory of
-# repo
-if (is.null(UKB_DB)) {
-  UKB_DB <- "ukb.db"
-}
-
-# ERROR IF DATABASE ALREADY EXISTS
-if (file.exists(UKB_DB)) {
-  stop("Error! Database already exists at location ", UKB_DB)
-}
+# path to write database
+UKB_DB <- "ukb.db"
 
 # UKB code mappings file
 UKB_ALL_LKPS_MAPS_V2 <-"ukb_primarycare_codings/data/all_lkps_maps_v2.xlsx"
