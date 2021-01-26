@@ -20,5 +20,5 @@ ukb.db : $(ALL_SETUP_FILES)
 clean :
 	rm -i ukb.db
 	rm -r renv/library/
-	rm -r caliber/data/
-	rm -r ukb_primarycare_codings/data/
+	rm -r caliber
+	rm -r ukb_primarycare_codings

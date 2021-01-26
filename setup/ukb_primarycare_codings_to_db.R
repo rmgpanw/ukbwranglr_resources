@@ -13,7 +13,7 @@ library(readxl)
 UKB_DB <- "ukb.db"
 
 # UKB code mappings file
-UKB_ALL_LKPS_MAPS_V2 <-"ukb_primarycare_codings/data/all_lkps_maps_v2.xlsx"
+UKB_ALL_LKPS_MAPS_V2 <-"ukb_primarycare_codings/all_lkps_maps_v2.xlsx"
 
 # MAIN --------------------------------------------------------------------
 

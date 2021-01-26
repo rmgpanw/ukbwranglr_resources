@@ -18,9 +18,9 @@ library(RSQLite)
 UKB_DB <- "ukb.db"
 
 # caliber paths
-CALIBER_ROOT <- "caliber/data/chronological-map-phenotypes-master"
-CALIBER_PRIMARY <- "caliber/data/chronological-map-phenotypes-master/primary_care"
-CALIBER_SECONDARY <- "caliber/data/chronological-map-phenotypes-master/secondary_care"
+CALIBER_ROOT <- "caliber/chronological-map-phenotypes-07594b89fd7602b6e885987b56373a95359da52b"
+CALIBER_PRIMARY <- "caliber/chronological-map-phenotypes-07594b89fd7602b6e885987b56373a95359da52b/primary_care"
+CALIBER_SECONDARY <- "caliber/chronological-map-phenotypes-07594b89fd7602b6e885987b56373a95359da52b/secondary_care"
 CSV_REGEX <- "+\\.csv$"
 
 # get primary care file names
