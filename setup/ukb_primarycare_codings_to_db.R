@@ -1,6 +1,8 @@
 library(purrr)
 library(readxl)
+library(configr)
 
+config <- read.config("config.ini")
 # OVERVIEW ----------------------------------------------------------------
 
 # Script to read mapping sheets from the UKB mapping excel spreadsheet
@@ -9,11 +11,14 @@ library(readxl)
 
 # CONSTANTS -------------------------------------------------------------
 
-# path to write database
-UKB_DB <- "ukb.db"
-
 # UKB code mappings file
-UKB_ALL_LKPS_MAPS_V2 <-"ukb_primarycare_codings/all_lkps_maps_v2.xlsx"
+UKB_ALL_LKPS_MAPS_V2 <- config$PATHS$UKB_ALL_LKPS_MAPS_V2
+
+# path to write code mappings as .Rdata
+UKB_CODE_MAPPINGS <- config$PATHS$UKB_CODE_MAPPINGS
+
+# path to write code mappings as a database
+UKB_DB <- config$PATHS$UKB_DB
 
 # MAIN --------------------------------------------------------------------
 
@@ -25,6 +30,9 @@ all_lkps_maps_v2 <- UKB_ALL_LKPS_MAPS_V2 %>%
   map(read_excel,
       path = UKB_ALL_LKPS_MAPS_V2,
       col_types = "text")
+
+# save as .Rdata
+save(all_lkps_maps_v2, file = UKB_CODE_MAPPINGS)
 
 # write to separate tables in SQLite database
 con <- DBI::dbConnect(RSQLite::SQLite(), UKB_DB)

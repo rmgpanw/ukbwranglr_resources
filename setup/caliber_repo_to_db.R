@@ -6,8 +6,9 @@ library(tidyr)
 library(stringr)
 library(DBI)
 library(RSQLite)
+library(configr)
 
-
+config <- read.config("config.ini")
 # OVERVIEW ----------------------------------------------------------------
 
 # Script to collect all CALIBER code lists into a single standardised table and
@@ -15,13 +16,13 @@ library(RSQLite)
 
 # CONSTANTS -------------------------------------------------------------
 # location to write database
-UKB_DB <- "ukb.db"
+UKB_DB <- config$PATHS$UKB_DB
 
 # caliber paths
-CALIBER_ROOT <- "caliber/chronological-map-phenotypes-07594b89fd7602b6e885987b56373a95359da52b"
-CALIBER_PRIMARY <- "caliber/chronological-map-phenotypes-07594b89fd7602b6e885987b56373a95359da52b/primary_care"
-CALIBER_SECONDARY <- "caliber/chronological-map-phenotypes-07594b89fd7602b6e885987b56373a95359da52b/secondary_care"
-CSV_REGEX <- "+\\.csv$"
+CALIBER_ROOT <- config$PATHS$CALIBER_ROOT
+CALIBER_PRIMARY <- config$PATHS$CALIBER_PRIMARY
+CALIBER_SECONDARY <- config$PATHS$CALIBER_SECONDARY
+CSV_REGEX <- config$PATHS$CSV_REGEX
 
 # get primary care file names
 PRIMARY_CARE_FILES <- list.files(CALIBER_PRIMARY,

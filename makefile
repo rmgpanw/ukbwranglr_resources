@@ -15,10 +15,11 @@ ukb.db : $(ALL_SETUP_FILES)
 	bash setup/setup_ukb_primarycare_codings.sh
 	RScript setup/ukb_data_dict_codings_to_db.R
 
-## clean: remove ukb.db
+## clean: remove ukb.db, downloaded files and contents of Rdata
 .PHONY : clean
 clean :
 	rm -i ukb.db
 	rm -r renv/library/
 	rm -r caliber
 	rm -r ukb_primarycare_codings
+	rm Rdata/*

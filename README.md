@@ -18,6 +18,8 @@ This takes ~3-5 minutes to run and will:
     - Phenotype code lists from [CALIBER](https://github.com/spiros/chronological-map-phenotypes) (table name: `'phenotype_codes'`)
     - Clinical coding classification systems and maps provided by UK Biobank ([resource 592](https://biobank.ndph.ox.ac.uk/showcase/refer.cgi?id=592))
     - The UK Biobank data dictionary and codings list (downloaded directly from the [UK Biobank website](https://biobank.ctsu.ox.ac.uk/crystal/exinfo.cgi?src=accessing_data_guide))
+    
+1. Save the UKB data dictionary and codings files in `.Rdata` format under the directory `Rdata`
 
 The following command will remove `ukb.db`, all packages installed in `renv`, and all files downloaded from UKB and CALIBER:
 
@@ -29,3 +31,8 @@ make clean
 
 - [UKB data dictionary and code mapping files](https://biobank.ctsu.ox.ac.uk/crystal/exinfo.cgi?src=accessing_data_guide)
 - [UKB code mapping excel file](https://biobank.ndph.ox.ac.uk/ukb/refer.cgi?id=592)
+
+# Version details
+
+- Version 0.0.0.9000
+- Files last downloaded 22 March 2021
