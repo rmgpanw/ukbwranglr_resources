@@ -1,0 +1,69 @@
+# FieldID's generate dummy UKB data for - to be used with ukbwranglr_dummy.sh
+# see https://biobank.ctsu.ox.ac.uk/crystal/cats.cgi for categories of data fields
+
+# PRIMARY DEMOGRAPHICS - https://biobank.ctsu.ox.ac.uk/crystal/label.cgi?id=1001
+31
+34
+52
+21000
+189
+
+# PHYSICAL MEASURES - https://biobank.ctsu.ox.ac.uk/crystal/label.cgi?id=1006
+## BMI, SBP
+21001
+4080
+
+# BLOOD BIOCHEMISTRY - https://biobank.ndph.ox.ac.uk/ukb/label.cgi?id=17518
+## HbA1c, cholesterol (total) 
+30750
+30690
+
+# DISEASE OUTCOMES
+## > First occurrence - https://biobank.ndph.ox.ac.uk/ukb/label.cgi?id=2404
+130706
+130708
+130710
+130712
+130714
+132202
+
+## > [NOT REQUIRED] Touchscreen - https://biobank.ndph.ox.ac.uk/ukb/label.cgi?id=100044
+#2443
+#2976
+#2986
+
+## > Verbal interview - https://biobank.ndph.ox.ac.uk/ukb/field.cgi?id=20002
+### Non-cancer illness code, age and year when diagnosed 
+20002
+20009
+20008
+
+### Cancer illness code, age and year when diagnosed
+20001
+20007
+20006
+
+## > Hospital inpatient diagnoses - https://biobank.ndph.ox.ac.uk/ukb/label.cgi?id=2002
+### ICD10 and ICD9, code and date of first in-patient diagnosis
+41270
+41280
+41271
+41281
+
+## > Death register records - https://biobank.ndph.ox.ac.uk/showcase/label.cgi?id=100093
+### ICD10, primary and secondary causes of death
+40001
+40002
+
+## > Cancer register data - https://biobank.ndph.ox.ac.uk/showcase/label.cgi?id=100092
+### ICD9, ICD10, age when diagnosed and date of diagnosis
+40013
+40006
+40008
+40005
+
+# MEDICATIONS
+## > Verbal interview - 
+### Medications
+20003
+20076
