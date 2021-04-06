@@ -31,8 +31,8 @@ all_lkps_maps_v2 <- UKB_ALL_LKPS_MAPS_V2 %>%
       path = UKB_ALL_LKPS_MAPS_V2,
       col_types = "text")
 
-# save as .Rdata
-save(all_lkps_maps_v2, file = UKB_CODE_MAPPINGS)
+# save as .rds
+saveRDS(all_lkps_maps_v2, file = UKB_CODE_MAPPINGS)
 
 # write to separate tables in SQLite database
 con <- DBI::dbConnect(RSQLite::SQLite(), UKB_DB)
