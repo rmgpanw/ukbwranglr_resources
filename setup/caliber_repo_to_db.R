@@ -6,18 +6,23 @@ library(tidyr)
 library(stringr)
 library(DBI)
 library(RSQLite)
+library(configr)
 
-
+config <- read.config("config.ini")
 # OVERVIEW ----------------------------------------------------------------
 
 # Script to collect all CALIBER code lists into a single standardised table and
 # write this to a SQLite database.
 
 # CONSTANTS -------------------------------------------------------------
-CALIBER_ROOT <- "caliber/data/chronological-map-phenotypes-master"
-CALIBER_PRIMARY <- "caliber/data/chronological-map-phenotypes-master/primary_care"
-CALIBER_SECONDARY <- "caliber/data/chronological-map-phenotypes-master/secondary_care"
-CSV_REGEX <- "+\\.csv$"
+# location to write database
+UKB_DB <- config$PATHS$UKB_DB
+
+# caliber paths
+CALIBER_ROOT <- config$PATHS$CALIBER_ROOT
+CALIBER_PRIMARY <- config$PATHS$CALIBER_PRIMARY
+CALIBER_SECONDARY <- config$PATHS$CALIBER_SECONDARY
+CSV_REGEX <- config$PATHS$CSV_REGEX
 
 # get primary care file names
 PRIMARY_CARE_FILES <- list.files(CALIBER_PRIMARY,
@@ -126,7 +131,7 @@ result <- result %>%
   mutate(phenotype_source = "caliber")
 
 # write to database
-con <- DBI::dbConnect(RSQLite::SQLite(), "ukb.db")
+con <- DBI::dbConnect(RSQLite::SQLite(), UKB_DB)
 
 DBI::dbWriteTable(
   conn = con,

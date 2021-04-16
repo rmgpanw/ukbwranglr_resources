@@ -72,6 +72,13 @@
       "Repository": "CRAN",
       "Hash": "dbb5e436998a7eba5a9d682060533338"
     },
+    "RcppTOML": {
+      "Package": "RcppTOML",
+      "Version": "0.1.7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "f8a578aa91321ecec1292f1e2ffadeda"
+    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.1",
@@ -183,6 +190,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "0f22be39ec1d141fd03683c06f3a6e67"
+    },
+    "configr": {
+      "Package": "configr",
+      "Version": "0.3.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "27bf543086066d25a38ed9fe26fa2ad8"
     },
     "covr": {
       "Package": "covr",
