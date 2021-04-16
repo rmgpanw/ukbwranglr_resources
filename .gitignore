@@ -1,3 +1,7 @@
 data/*
 ukb.db
-.Rproj.user
+.Rhistory
+.Rproj.user*
+ukb_primarycare_codings/*
+caliber/*
+.Rproj.user/*
