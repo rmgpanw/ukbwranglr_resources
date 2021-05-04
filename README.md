@@ -6,9 +6,8 @@ A collection of resources to support [`ukbwranglr`](https://rmgpanw.github.io/uk
 
 In the R console:
 
-1. Install the `renv` package with `install.packages("renv")`
-2. Restore environment from lockfile with `renv::restore()`
-3. Run either `targets::tar_make()`
+1. Restore environment from lockfile with `renv::restore()`
+2. Run `targets::tar_make()`
 
 # Useful links
 
