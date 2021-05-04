@@ -1,0 +1,62 @@
+---
+title: "Home"
+site: workflowr::wflow_site
+output:
+  workflowr::wflow_html:
+    toc: false
+editor_options:
+  chunk_output_type: console
+---
+
+```{r}
+targets::tar_glimpse()
+```
+
+
+# `ukb.db` schema
+
+```{r}
+# make connection
+con <- DBI::dbConnect(RSQLite::SQLite(), dbname = "ukb.db")
+
+# create dm object
+ukb_db <- dm::dm_from_src(con)
+
+# draw schema
+ukb_db %>%
+  dm::dm_set_colors(
+    darkgreen = c(
+      bnf_lkp,
+      dmd_lkp,
+      icd10_lkp,
+      icd9_icd10,
+      icd9_lkp,
+      read_ctv3_icd10,
+      read_ctv3_icd9,
+      read_ctv3_lkp,
+      read_ctv3_opcs4,
+      read_ctv3_read_v2,
+      read_v2_drugs_bnf,
+      read_v2_drugs_lkp,
+      read_v2_icd10,
+      read_v2_icd9,
+      read_v2_lkp,
+      read_v2_opcs4,
+      read_v2_read_ctv3
+    ),
+    darkred = c(
+      ukb_data_dict,
+      ukb_codings
+    ),
+    purple = c(
+      caliber_codes
+    )
+  ) %>% 
+dm::dm_draw()
+```
+
+```{r}
+targets::tar_meta() %>% 
+  DT::datatable()
+```
+

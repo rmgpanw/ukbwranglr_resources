@@ -1,0 +1,39 @@
+---
+title: "Notes"
+site: workflowr::wflow_site
+output:
+  workflowr::wflow_html:
+    toc: false
+editor_options:
+  chunk_output_type: console
+---
+
+# Notes
+
+- `tar_make_future()` was slower than `tar_make()` (217 vs 140 seconds)
+
+To run in docker:
+
+1. In an R terminal, run steps 1 and 2 above
+2. In R, get the `renv` cache directory with `renv:::renv_paths_cache()`
+2. open a terminal in the root directory of this repo and run, the following, replacing 'path-to-renv-cache':
+
+```bash
+# the path to an renv cache on the host machine
+RENV_PATHS_CACHE_HOST="~/path-to-renv-cache"
+
+# the path to the cache within the container
+RENV_PATHS_CACHE_CONTAINER=$RENV_PATHS_CACHE_HOST
+
+# project directory (to be mounted into docker container)
+project_dir=$(pwd)
+
+# run the container with the host cache mounted in the container
+docker run --rm \
+    -e PASSWORD=password \
+    -e "RENV_PATHS_CACHE=${RENV_PATHS_CACHE_CONTAINER}" \
+    -v "${RENV_PATHS_CACHE_HOST}:${RENV_PATHS_CACHE_CONTAINER}" \
+    -v ${project_dir}:/home/rstudio \
+    -p 8787:8787 \
+    rocker/verse:4.0.5
+```

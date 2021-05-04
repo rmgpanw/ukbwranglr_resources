@@ -1,0 +1,27 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|iteration|parent|children|seconds|warnings|error
+CALIBER_PRIMARY|object|9ff26f784c774f19||||||||||||||
+reformat_caliber_read2|function|60b967e708751de4||||||||||||||
+download_caliber_repo|function|c0667e83e2977238||||||||||||||
+standardise_primary_care|function|d0da98be349830ac||||||||||||||
+standardise_secondary_care_icd10|function|a843e5ce4ed08675||||||||||||||
+standardise_secondary_care_opcs4|function|826ccc880d036b8d||||||||||||||
+make_ukb_db_zipped|function|0aef26dd6987cb2c||||||||||||||
+map_caliber_sinale_disease_category|function|94c4898746ae3a3d||||||||||||||
+read_csv_as_character|function|1b612d8446a544fe||||||||||||||
+CALIBER_SECONDARY|object|e045ee3c0932f21c||||||||||||||
+SECONDARY_CARE_FILES|object|ef46db3751d8e999||||||||||||||
+UKB_DB|object|aca2db7c1dab86aa||||||||||||||
+CALIBER_ROOT|object|41c54a6f0a519891||||||||||||||
+SECONDARY_CARE_FILES_ICD|object|ef46db3751d8e999||||||||||||||
+CSV_REGEX|object|341ebbfba77d74bc||||||||||||||
+config|object|1b59a621a1061d2d||||||||||||||
+PRIMARY_CARE_FILES|object|ef46db3751d8e999||||||||||||||
+SECONDARY_CARE_FILES_OPCS|object|ef46db3751d8e999||||||||||||||
+map_caliber_multiple_disease_categories|function|1ad9d261ba35b191||||||||||||||
+read_csv_to_named_list|function|201c88e1e8517d1d||||||||||||||
+get_caliber_codes_standardise_and_map|function|681ab3df5f59c896||||||||||||||
+UKB_DATA_DICT|stem|9afa59204a0cdcec|083c92e2ab4ca8b5|552e26e8b0efc6c3|-374350639||t18751.8564911902s|e1dbe0a57424247e|335584|rds|vector|||0.977||
+UKB_CODINGS|stem|13079a3f8ac40737|acf0e60a7c43c5af|99ea5ae2d14767a0|1272556899||t18751.8565921033s|3b5b00ec46513489|5362210|rds|vector|||4.875||
+UKB_CODE_MAPPINGS|stem|7a96e720faf28914|f2bedb457dfec4bc|62c64f88c64c25d7|-746975157||t18751.8576104593s|4ba0b6e58e0c182b|27884296|rds|vector|||64.251||
+CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|f37d9ed03d407984|eb62295e8a12a622|96b45b8468ef99d3|1156193610||t18751.8585123212s|a7e5b6b5810dc67d|296615|rds|vector|||50.015|Warning No mapping sheet available for this request. Attempting to map anyway using icd9_icd10|
+UKB_DB_ZIPPED|stem|4a2cf5a00ba82a0c|9fc2d056a43b356b|4b86bf0b74cff238|-1425916365|ukb.db.zip|t18751.8589288984s|d2e4b0da546f941c|50700477|file|vector|||18.427||

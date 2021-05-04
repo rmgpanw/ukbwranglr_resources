@@ -4,28 +4,11 @@ A collection of resources to support [`ukbwranglr`](https://rmgpanw.github.io/uk
 
 # Setup
 
-After cloning this repo, open a terminal in the root directory for this repo (where this `README` file is located) and run the following command:
+In the R console:
 
-```bash
-make
-```
-
-This takes ~3-5 minutes to run and will:
-
-1. Create a local R environment in this directory (in a subfolder called `renv`) with all required R packages
-1. Generate a SQLite database file called `ukb.db` containing:
-
-    - Phenotype code lists from [CALIBER](https://github.com/spiros/chronological-map-phenotypes) (table name: `'phenotype_codes'`)
-    - Clinical coding classification systems and maps provided by UK Biobank ([resource 592](https://biobank.ndph.ox.ac.uk/showcase/refer.cgi?id=592))
-    - The UK Biobank data dictionary and codings list (downloaded directly from the [UK Biobank website](https://biobank.ctsu.ox.ac.uk/crystal/exinfo.cgi?src=accessing_data_guide))
-    
-1. Save the UKB data dictionary and codings files in `.Rdata` format under the directory `Rdata`
-
-The following command will remove `ukb.db`, all packages installed in `renv`, and all files downloaded from UKB and CALIBER:
-
-```bash
-make clean
-```
+1. Install the `renv` package with `install.packages("renv")`
+2. Restore environment from lockfile with `renv::restore()`
+3. Run either `targets::tar_make()`
 
 # Useful links
 
@@ -34,5 +17,5 @@ make clean
 
 # Version details
 
-- Version 0.0.0.9000
-- Files last downloaded 22 March 2021
+- Version 0.0.0.9001
+- Files last downloaded 4 May 2021
