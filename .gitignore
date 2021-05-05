@@ -2,3 +2,5 @@ ukb.db
 .Rhistory
 .Rproj.user/*
 .future/*
+.Rproj.user
+_targets/meta*
