@@ -8,10 +8,11 @@ editor_options:
   chunk_output_type: console
 ---
 
+# Repo setup workflow
+
 ```{r}
 targets::tar_glimpse()
 ```
-
 
 # `ukb.db` schema
 
@@ -54,9 +55,3 @@ ukb_db %>%
   ) %>% 
 dm::dm_draw()
 ```
-
-```{r}
-targets::tar_meta() %>% 
-  DT::datatable()
-```
-
