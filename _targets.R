@@ -1,17 +1,19 @@
 library(targets)
 library(ukbwranglr)
-library(configr)
 library(magrittr)
 library(future)
 library(future.callr)
 library(future.batchtools)
 
+# If running tar_make() or tar_make_future() locally
 plan(callr)
+
+# Un-hash to run remotely on SGE cluster
+# plan(batchtools_sge, template = "sge.tmpl")
+
 # Use tar_script() to create _targets.R and tar_edit()
 # to open it again for editing.
 # Then, run tar_make() to run the pipeline
-# and tar_read(summary) to view the results.
-
 
 # CONSTANTS ---------------------------------------------------------------
 UKB_DB <- "ukb.db"
@@ -66,7 +68,6 @@ make_ukb_db_zipped <- function(tables,
   # return filepath
   return(ukb_db_zip_path)
 }
-
 
 # SETTINGS/OPTIONS --------------------------------------------------------
 

@@ -8,9 +8,21 @@ editor_options:
   chunk_output_type: console
 ---
 
-# Notes
+# Setup
 
-- `tar_make_future()` was slower than `tar_make()` (217 vs 140 seconds)
+## Future locally
+
+`tar_make_future(workers = 2)` was slower than `tar_make()` (217 vs 140 seconds)
+
+## Future remotely (SGE)
+
+1. Disable `renv` by removing `renv` directory and removing `source("renv/activate.R")` from `.Rprofile`
+2. Create conda environment with `conda env create --file environment.yml`
+3. Install `ukbwranglr` with `Rscript -e "devtools::install_github('rmgpanw/ukbwranglr')"`
+4. Open `_targets.R` in a text editor and (i) hash `plan(callr)` (ii) un-hash `plan(batchtools_sge, template = "sge.tmpl")` (near the top)
+5. Activate the conda environment and run in a terminal `Rscript -e "tar_make_future(workers = 3)"`. *Note: run this in a detached `tmux` session that will continue running in the background if you close your `ssh` connection before the process has finished*
+
+## Docker
 
 To run in docker:
 

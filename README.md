@@ -4,7 +4,9 @@ A collection of resources to support [`ukbwranglr`](https://rmgpanw.github.io/uk
 
 # Setup
 
-In the R console:
+## Using `renv`
+
+Open an R console and set the root of this repo as the working directory (or open `ukbwranglr_resources.Rproj` in RStudio), then:
 
 1. Restore environment from lockfile with `renv::restore()`
 2. Run `targets::tar_make()`
