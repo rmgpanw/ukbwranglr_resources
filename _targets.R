@@ -2,7 +2,7 @@ library(targets)
 library(ukbwranglr)
 library(magrittr)
 library(future)
-library(future.callr)
+library(future.callr) # hash if running on SGE cluster
 library(future.batchtools)
 
 # If running tar_make() or tar_make_future() locally
