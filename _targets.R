@@ -1,12 +1,11 @@
 library(targets)
 library(ukbwranglr)
-library(configr)
 library(magrittr)
 library(future)
-library(future.callr)
+# library(future.callr)
 library(future.batchtools)
 
-plan(callr)
+plan(batchtools_sge, template = "sge.tmpl")
 # Use tar_script() to create _targets.R and tar_edit()
 # to open it again for editing.
 # Then, run tar_make() to run the pipeline
@@ -14,23 +13,7 @@ plan(callr)
 
 
 # CONSTANTS ---------------------------------------------------------------
-config <- configr::read.config("config.ini")
-UKB_DB <- config$PATHS$UKB_DB
-# caliber paths
-CALIBER_ROOT <- config$PATHS$CALIBER_ROOT
-CALIBER_PRIMARY <- config$PATHS$CALIBER_PRIMARY
-CALIBER_SECONDARY <- config$PATHS$CALIBER_SECONDARY
-CSV_REGEX <- config$PATHS$CSV_REGEX
-
-# get primary care file names
-PRIMARY_CARE_FILES <- list.files(CALIBER_PRIMARY,
-                                 pattern = CSV_REGEX)
-
-SECONDARY_CARE_FILES <- list.files(CALIBER_SECONDARY,
-                                   pattern = CSV_REGEX)
-
-SECONDARY_CARE_FILES_ICD <- subset(SECONDARY_CARE_FILES, grepl("^ICD_", SECONDARY_CARE_FILES))
-SECONDARY_CARE_FILES_OPCS <- subset(SECONDARY_CARE_FILES, grepl("^OPCS_", SECONDARY_CARE_FILES))
+UKB_DB <- "ukb.db" 
 
 # FUNCTIONS ---------------------------------------------------------------
 
