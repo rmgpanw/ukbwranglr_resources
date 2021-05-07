@@ -19,33 +19,52 @@ editor_options:
 1. Disable `renv` by removing `renv` directory and removing `source("renv/activate.R")` from `.Rprofile`
 2. Create conda environment with `conda env create --file environment.yml`
 3. Install `ukbwranglr` with `Rscript -e "devtools::install_github('rmgpanw/ukbwranglr')"`
-4. Open `_targets.R` in a text editor and (i) hash `plan(callr)` (ii) un-hash `plan(batchtools_sge, template = "sge.tmpl")` (near the top)
-5. Activate the conda environment and run in a terminal `Rscript -e "tar_make_future(workers = 3)"`. *Note: run this in a detached `tmux` session that will continue running in the background if you close your `ssh` connection before the process has finished*
+4. Open `_targets.R` in a text editor and (i) hash `plan(callr)` and `library(future.callr)` (I was unable to install with conda) (ii) un-hash `plan(batchtools_sge, template = "sge.tmpl")` (near the top)
+5. Activate the conda environment and run in a terminal `Rscript -e "targets::tar_make_future(workers = 3)"`. *Note: run this in a detached `tmux` session that will continue running in the background if you close your `ssh` connection before the process has finished*
 
 ## Docker
+
+### With `renv`
+
+> *Could not get this to work, `callr` kept crashing at UKB_CODE_MAPPINGS stage: 'Error: callr subprocess failed: could not start R, exited with non-zero status, has crashed or was killed'*
 
 To run in docker:
 
 1. In an R terminal, run steps 1 and 2 above
-2. In R, get the `renv` cache directory with `renv:::renv_paths_cache()`
-2. open a terminal in the root directory of this repo and run, the following, replacing 'path-to-renv-cache':
+2. Open a terminal in the root directory of this repo and run, the following, replacing 'path-to-renv-cache':
 
 ```bash
 # the path to an renv cache on the host machine
-RENV_PATHS_CACHE_HOST="~/path-to-renv-cache"
+RENV_PATHS_CACHE_HOST=$(Rscript -e "renv:::renv_paths_cache()")
 
 # the path to the cache within the container
 RENV_PATHS_CACHE_CONTAINER=$RENV_PATHS_CACHE_HOST
-
-# project directory (to be mounted into docker container)
-project_dir=$(pwd)
 
 # run the container with the host cache mounted in the container
 docker run --rm \
     -e PASSWORD=password \
     -e "RENV_PATHS_CACHE=${RENV_PATHS_CACHE_CONTAINER}" \
     -v "${RENV_PATHS_CACHE_HOST}:${RENV_PATHS_CACHE_CONTAINER}" \
-    -v ${project_dir}:/home/rstudio \
+    -v $(pwd):/home/rstudio \
     -p 8787:8787 \
     rocker/verse:4.0.5
 ```
+
+### With `conda`
+
+> *Could not get this to work. Ran into an issue when installing ukbwranglr - required `gtar`, which is not included in the `miniconda` image*
+
+Make `Dockerfile`, following guidance at https://medium.com/@chadlagore/conda-environments-with-docker-82cdc9d25754.
+
+1. Disable `renv` by removing `renv` directory and removing `source("renv/activate.R")` from `.Rprofile`
+2. Build docker image with `docker build -t ukbwranglr_resources .`
+3. Launch container with
+
+```bash
+docker run --rm -it \
+    -v $(pwd):/ukbwranglr_resources \
+    ukbwranglr_resources
+```
+
+4. Install ukbwranglr
+5. Run targets
