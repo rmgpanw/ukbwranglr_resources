@@ -103,6 +103,16 @@ reformat_caliber_read2 <- function(read2_df) {
                               replacement = ""))
 }
 
+reformat_caliber_icd10 <- function(icd10_df,
+                                   ukb_code_mappings) {
+  icd10_df %>%
+    mutate(code = ukbwranglr::reformat_icd10_codes(
+      icd10_codes = code,
+      ukb_code_mappings = ukb_code_mappings,
+      input_icd10_format = "ICD10_CODE",
+      output_icd10_format = "ALT_CODE"))
+}
+
 # functions to map codes from read2 to read3 and icd10 to icd9
 map_caliber_sinale_disease_category <- function(df,
                                                 disease,
@@ -186,7 +196,7 @@ map_caliber_multiple_disease_categories <- function(df,
 }
 
 # reads a list of csv files into a named list, standardises, then combines into single df
-read_csv_to_named_list <- function(
+read_csv_to_named_list_and_combine <- function(
   directory, # directory where files are located
   filenames, # vector of file names
   standardising_function, # function to process each file with
@@ -243,18 +253,19 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
 
   message("Reading caliber codeslists into R and reformtting")
   result$primary_care_codes_read2 <-
-    read_csv_to_named_list(CALIBER_PRIMARY,
+    read_csv_to_named_list_and_combine(CALIBER_PRIMARY,
                            filenames = PRIMARY_CARE_FILES,
                            standardising_function = standardise_primary_care) %>%
     reformat_caliber_read2()
 
   result$secondary_care_codes_icd10 <-
-    read_csv_to_named_list(CALIBER_SECONDARY,
+    read_csv_to_named_list_and_combine(CALIBER_SECONDARY,
                            filenames = SECONDARY_CARE_FILES_ICD,
-                           standardising_function = standardise_secondary_care_icd10)
+                           standardising_function = standardise_secondary_care_icd10) %>%
+    reformat_caliber_icd10(ukb_code_mappings = ukb_code_mappings)
 
   result$secondary_care_codes_opcs4 <-
-    read_csv_to_named_list(CALIBER_SECONDARY,
+    read_csv_to_named_list_and_combine(CALIBER_SECONDARY,
                            filenames = SECONDARY_CARE_FILES_OPCS,
                            standardising_function = standardise_secondary_care_opcs4)
 

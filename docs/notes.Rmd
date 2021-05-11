@@ -30,12 +30,12 @@ editor_options:
 
 To run in docker:
 
-1. In an R terminal, run steps 1 and 2 above
-2. Open a terminal in the root directory of this repo and run, the following, replacing 'path-to-renv-cache':
+1. Open a terminal in the root directory of this repo and run `Rscript -e "renv:::renv_paths_cache()` to get the path to `renv` cache
+2. Run the following, replacing 'path-to-renv-cache' with the result from step 1:
 
 ```bash
 # the path to an renv cache on the host machine
-RENV_PATHS_CACHE_HOST=$(Rscript -e "renv:::renv_paths_cache()")
+RENV_PATHS_CACHE_HOST="path-to-renv-cache"
 
 # the path to the cache within the container
 RENV_PATHS_CACHE_CONTAINER=$RENV_PATHS_CACHE_HOST
@@ -49,6 +49,10 @@ docker run --rm \
     -p 8787:8787 \
     rocker/verse:4.0.5
 ```
+
+3. In a browser, go to URL `localhost:8787` to open RStudio in docker. Log in with user name 'rstudio' and password 'password'
+4. Run `renv::restore()`
+5. Run `targets::tar_make()`
 
 ### With `conda`
 
