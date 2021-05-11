@@ -106,7 +106,7 @@ reformat_caliber_read2 <- function(read2_df) {
 reformat_caliber_icd10 <- function(icd10_df,
                                    ukb_code_mappings) {
   icd10_df %>%
-    mutate(code = ukbwranglr::reformat_icd10_codes(
+    dplyr::mutate(code = ukbwranglr::reformat_icd10_codes(
       icd10_codes = code,
       ukb_code_mappings = ukb_code_mappings,
       input_icd10_format = "ICD10_CODE",
