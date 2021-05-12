@@ -105,16 +105,74 @@ reformat_caliber_read2 <- function(read2_df) {
 
 reformat_caliber_icd10 <- function(icd10_df,
                                    ukb_code_mappings) {
+
+  # TEMP PATCH - some CALIBER ICD10 codes are in the ALT_CODE format (most are
+  # not). There are also a couple of codes that do not appear in either: A90 and
+  # A91
   icd10_df %>%
-    dplyr::mutate(code = ukbwranglr::reformat_icd10_codes(
-      icd10_codes = code,
-      ukb_code_mappings = ukb_code_mappings,
-      input_icd10_format = "ICD10_CODE",
-      output_icd10_format = "ALT_CODE"))
+    dplyr::mutate(
+      code = ifelse(
+        code %in% c(
+          'I714',
+          'I716',
+          'I719',
+          'I250',
+          'I251',
+          'I253',
+          'I254',
+          'I255',
+          'I256',
+          'I258',
+          'I259',
+          'O242',
+          'G590',
+          'G632',
+          'H280',
+          'H360',
+          'M142',
+          'N083',
+          'O240',
+          'O241',
+          'O243',
+          'I252',
+          'I241',
+          'A90',
+          'A91',
+          'I731',
+          'I738',
+          'I739',
+          'I743',
+          'I744',
+          'I745',
+          'I201',
+          'I208',
+          'I209',
+          'I200',
+          'N23.X',
+          'A90',
+          'A91'
+        ),
+        code,
+        ukbwranglr::reformat_icd10_codes(
+          icd10_codes = code,
+          ukb_code_mappings = ukb_code_mappings,
+          input_icd10_format = "ICD10_CODE",
+          output_icd10_format = "ALT_CODE")
+      )
+    )
+
+  # reformat to the 'ALT-CODE' format in UKB HES data
+  # icd10_df$code <- ukbwranglr::reformat_icd10_codes(
+  #   icd10_codes = icd10_df$code,
+  #   ukb_code_mappings = ukb_code_mappings,
+  #   input_icd10_format = "ICD10_CODE",
+  #   output_icd10_format = "ALT_CODE")
+
+  # return(icd10_df)
 }
 
 # functions to map codes from read2 to read3 and icd10 to icd9
-map_caliber_sinale_disease_category <- function(df,
+map_caliber_single_disease_category <- function(df,
                                                 disease,
                                                 disease_category,
                                                 ukb_code_mappings,
@@ -178,7 +236,7 @@ map_caliber_multiple_disease_categories <- function(df,
       disease_category_df <- disease_df[disease_df$category == disease_category, ]
 
       result[[disease_category]] <-
-        map_caliber_sinale_disease_category(
+        map_caliber_single_disease_category(
           df = disease_category_df,
           disease = disease,
           disease_category = disease_category,
@@ -251,7 +309,7 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
     purrr::set_names() %>%
     purrr::map(~ NULL)
 
-  message("Reading caliber codeslists into R and reformtting")
+  message("Reading caliber clinical codes lists into R and reformtting")
   result$primary_care_codes_read2 <-
     read_csv_to_named_list_and_combine(CALIBER_PRIMARY,
                            filenames = PRIMARY_CARE_FILES,
@@ -261,8 +319,7 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
   result$secondary_care_codes_icd10 <-
     read_csv_to_named_list_and_combine(CALIBER_SECONDARY,
                            filenames = SECONDARY_CARE_FILES_ICD,
-                           standardising_function = standardise_secondary_care_icd10) %>%
-    reformat_caliber_icd10(ukb_code_mappings = ukb_code_mappings)
+                           standardising_function = standardise_secondary_care_icd10)
 
   result$secondary_care_codes_opcs4 <-
     read_csv_to_named_list_and_combine(CALIBER_SECONDARY,
@@ -288,6 +345,10 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
       from = "icd10",
       to = "icd9"
     )
+
+  message("Reformatting icd10 codes")
+  result$secondary_care_codes_icd10 <- result$secondary_care_codes_icd10 %>%
+    reformat_caliber_icd10(ukb_code_mappings = ukb_code_mappings)
 
   # combine
   message("Concatenating results")

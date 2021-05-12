@@ -1,20 +1,23 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|iteration|parent|children|seconds|warnings|error
 read_csv_to_named_list|function|201c88e1e8517d1d||||||||||||||
-UKB_DATA_DICT|stem|9afa59204a0cdcec|083c92e2ab4ca8b5|552e26e8b0efc6c3|-374350639||t18752.602030054s|e1dbe0a57424247e|335584|rds|vector|||0.904||
-UKB_CODE_MAPPINGS|stem|7a96e720faf28914|f2bedb457dfec4bc|62c64f88c64c25d7|-746975157||t18752.6028536494s|4ba0b6e58e0c182b|27884296|rds|vector|||63.669||
-UKB_CODINGS|stem|13079a3f8ac40737|acf0e60a7c43c5af|99ea5ae2d14767a0|1272556899||t18752.6029027534s|3b5b00ec46513489|5362210|rds|vector|||3.11||
-UKB_DB_ZIPPED|stem|24d4f5f83b66dfab|9fc2d056a43b356b|4b86bf0b74cff238|-1425916365|ukb.db.zip|t18752.6040222231s|d2e4b0da546f941c|50700477|file|vector|||21.907||
+map_caliber_sinale_disease_category|function|94c4898746ae3a3d||||||||||||||
+UKB_CODE_MAPPINGS|stem|7a96e720faf28914|f2bedb457dfec4bc|62c64f88c64c25d7|-746975157||t18758.9961949542s|4ba0b6e58e0c182b|27884296|rds|vector|||57.027||
+UKB_CODINGS|stem|13079a3f8ac40737|acf0e60a7c43c5af|99ea5ae2d14767a0|1272556899||t18758.9962402973s|3b5b00ec46513489|5362210|rds|vector|||2.724||
+UKB_DATA_DICT|stem|9afa59204a0cdcec|083c92e2ab4ca8b5|552e26e8b0efc6c3|-374350639||t18758.9954527755s|e1dbe0a57424247e|335584|rds|vector|||0.828||
+install_ukbwranglr|function|4929456c4b0dbe90||||||||||||||
+.Random.seed|object|09daa3a76af8ae8d||||||||||||||
 read_csv_as_character|function|1b612d8446a544fe||||||||||||||
 reformat_caliber_read2|function|60b967e708751de4||||||||||||||
 download_caliber_repo|function|c0667e83e2977238||||||||||||||
-reformat_caliber_icd10|function|bae6287bf87b6eaf||||||||||||||
+reformat_caliber_icd10|function|4fa1f75816cdf758||||||||||||||
 standardise_primary_care|function|d0da98be349830ac||||||||||||||
 standardise_secondary_care_icd10|function|a843e5ce4ed08675||||||||||||||
 standardise_secondary_care_opcs4|function|826ccc880d036b8d||||||||||||||
 make_ukb_db_zipped|function|0aef26dd6987cb2c||||||||||||||
-map_caliber_sinale_disease_category|function|94c4898746ae3a3d||||||||||||||
+map_caliber_single_disease_category|function|94c4898746ae3a3d||||||||||||||
 UKB_DB|object|aca2db7c1dab86aa||||||||||||||
 read_csv_to_named_list_and_combine|function|201c88e1e8517d1d||||||||||||||
-map_caliber_multiple_disease_categories|function|1ad9d261ba35b191||||||||||||||
-get_caliber_codes_standardise_and_map|function|df95ac07da77d279||||||||||||||
-CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|f37d9ed03d407984|eb62295e8a12a622|caa293e94c8e3e8d|1156193610||t18752.6037685963s||296615|rds|vector|||6.909||could not find function mutate
+map_caliber_multiple_disease_categories|function|e5bf49f6f0d6e6ee||||||||||||||
+get_caliber_codes_standardise_and_map|function|9b4af4519c53c4d7||||||||||||||
+CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|e78946d97e388dda|eb62295e8a12a622|98cbed7451cf0609|1156193610||t18759.043745057s|c2c88d30c4ba4ac1|295859|rds|vector|||55.571|Warning No mapping sheet available for this request. Attempting to map anyway using icd9_icd10|
+UKB_DB_ZIPPED|stem|cc3f4b431532a926|9fc2d056a43b356b|45af86f3c867804f|-1425916365|ukb.db.zip|t18759.0439987213s|524315fc58d3d8ad|52131653|file|vector|||20.839||
