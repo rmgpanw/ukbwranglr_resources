@@ -84,6 +84,85 @@ standardise_secondary_care_opcs4 <- purrr::as_mapper(
 
 # functions to reformat codes for UKB
 
+get_icd10_codes_with_modifiers <- function(icd10_lkp) {
+  icd10_lkp %>%
+    dplyr::filter(!is.na(MODIFIER_4) | !is.na(MODIFIER_5)) %>%
+    # mutate column for codes minus modifiers
+    dplyr::mutate(base_code = stringr::str_replace_all(
+      ICD10_CODE,
+      "\\.[:digit:]*$",
+      ""
+    ))
+}
+
+append_icd10_ALT_CODEs_with_modifiers <- function(df,
+                                                  ukb_code_mappings) {
+
+  # all icd10 codes with modifiers
+  icd10_with_modifiers_all <- get_icd10_codes_with_modifiers(ukb_code_mappings$icd10_lkp)
+
+  # icd10 codes (base e.g. E10) with modifiers (e.g. E10.0, E10.1 etc) in df
+  df_icd10_with_modifiers <- df %>%
+    dplyr::filter(code %in% icd10_with_modifiers_all$base_code)
+
+  # ...remove these from df
+  df <- df %>%
+    dplyr::filter(!code %in% icd10_with_modifiers_all$base_code)
+
+  # append ALT_CODES with modifiers, by disease
+  disease_categories <- unique(df_icd10_with_modifiers$category)
+  df_icd10_with_modifiers <- disease_categories %>%
+    purrr::set_names() %>%
+    purrr::map(.f = ~ {
+      # get base_codes for single disease category
+      base_codes_to_expand <- df_icd10_with_modifiers %>%
+        dplyr::filter(category == .x) %>%
+        .$code
+
+      # get disease for disease category
+      DISEASE <- df_icd10_with_modifiers %>%
+        dplyr::filter(category == .x) %>%
+        .$disease %>%
+        unique() # should be unique
+
+      # get full set of codes + modifiers for these 'base_codes'
+      expanded_codes <- icd10_with_modifiers_all %>%
+        dplyr::filter(base_code %in% base_codes_to_expand) %>%
+        .$ICD10_CODE
+
+      # add in base codes
+      expanded_codes <- c(expanded_codes, base_codes_to_expand)
+
+      # get descriptions
+      ukbwranglr::lookup_codes(codes = expanded_codes,
+                               code_type = "icd10",
+                               ukb_code_mappings = ukb_code_mappings,
+                               preferred_description_only = TRUE,
+                               standardise_output = TRUE,
+                               quiet = TRUE) %>%
+        dplyr::mutate(
+          disease = DISEASE,
+          code_type = "icd10",
+                      phenotype_source = "caliber",
+                      category = .x) %>%
+        dplyr::select(
+          disease,
+          description,
+          category,
+          code_type,
+          code,
+          phenotype_source
+        )
+    }) %>%
+    dplyr::bind_rows() %>%
+    dplyr::distinct()
+
+  # now re-join to original df
+  result <- dplyr::bind_rows(df, df_icd10_with_modifiers)
+
+  return(result)
+}
+
 # read2 codes: filter for only primary descriptions and remove last 2 characters
 # (the last 2 characters indicate whether description is primary or not for a
 # code) and remove "." from ICD-10 codes
@@ -93,25 +172,35 @@ reformat_caliber_read2 <- function(read2_df) {
     dplyr::filter(code_type == "Readcode") %>%
     # label as 'read2' (ukbwranglr format)
     dplyr::mutate(code_type = "read2") %>%
-    # filter for primary descriptions only: the last 2 characters indicate whether
-    # description is the  preferred one or not
-    dplyr::filter(stringr::str_detect(code, ".*00$")) %>%
+
+    # TO DELETE - not all codes include the primary description e.g. C108.
+
+    # # filter for primary descriptions only: the last 2 characters indicate whether
+    # # description is the  preferred one or not
+    # dplyr::filter(stringr::str_detect(code, ".*00$")) %>%
+    #
+    # # remove last 2 characters
+    # dplyr::mutate(code = stringr::str_replace(code,
+    #                                           pattern = "00$",
+    #                                           replacement = ""))
 
     # remove last 2 characters
-    dplyr::mutate(code = stringr::str_replace(code,
-                              pattern = "00$",
-                              replacement = ""))
+    dplyr::mutate(code = stringr::str_sub(code,
+                              start = 1L,
+                              end = -3L)) %>%
+
+    # take only one description per code, per disease
+    dplyr::group_by(disease, code) %>%
+    dplyr::slice(1L) %>%
+    dplyr::ungroup()
 }
 
 reformat_caliber_icd10 <- function(icd10_df,
                                    ukb_code_mappings) {
 
-  # reformat to the 'ALT-CODE' format in UKB HES data
-  icd10_df$code <- ukbwranglr::reformat_icd10_codes(
-    icd10_codes = icd10_df$code,
-    ukb_code_mappings = ukb_code_mappings,
-    input_icd10_format = "ICD10_CODE",
-    output_icd10_format = "ALT_CODE")
+  # get all ALT_CODES e.g. E10
+  icd10_df <- append_icd10_ALT_CODEs_with_modifiers(df = icd10_df,
+                                                    ukb_code_mappings = ukb_code_mappings)
 
   return(icd10_df)
 
@@ -308,7 +397,8 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
   result$secondary_care_codes_icd10 <-
     read_csv_to_named_list_and_combine(CALIBER_SECONDARY,
                            filenames = SECONDARY_CARE_FILES_ICD,
-                           standardising_function = standardise_secondary_care_icd10)
+                           standardising_function = standardise_secondary_care_icd10) %>%
+    reformat_caliber_icd10(ukb_code_mappings = ukb_code_mappings)
 
   result$secondary_care_codes_opcs4 <-
     read_csv_to_named_list_and_combine(CALIBER_SECONDARY,
@@ -335,9 +425,15 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
       to = "icd9"
     )
 
-  message("Reformatting icd10 codes")
-  result$secondary_care_codes_icd10 <- result$secondary_care_codes_icd10 %>%
-    reformat_caliber_icd10(ukb_code_mappings = ukb_code_mappings)
+  message("Switching icd10 codes to ALT_CODE format")
+  # reformat to the 'ALT-CODE' format in UKB HES data
+  result$secondary_care_codes_icd10$code <-
+    ukbwranglr::reformat_icd10_codes(
+      icd10_codes = result$secondary_care_codes_icd10$code,
+      ukb_code_mappings = ukb_code_mappings,
+      input_icd10_format = "ICD10_CODE",
+      output_icd10_format = "ALT_CODE"
+    )
 
   # combine
   message("Concatenating results")
