@@ -106,69 +106,58 @@ reformat_caliber_read2 <- function(read2_df) {
 reformat_caliber_icd10 <- function(icd10_df,
                                    ukb_code_mappings) {
 
-  # TEMP PATCH - some CALIBER ICD10 codes are in the ALT_CODE format (most are
-  # not). There are also a couple of codes that do not appear in either: A90 and
-  # A91
-  icd10_df %>%
-    dplyr::mutate(
-      code = ifelse(
-        code %in% c(
-          'I714',
-          'I716',
-          'I719',
-          'I250',
-          'I251',
-          'I253',
-          'I254',
-          'I255',
-          'I256',
-          'I258',
-          'I259',
-          'O242',
-          'G590',
-          'G632',
-          'H280',
-          'H360',
-          'M142',
-          'N083',
-          'O240',
-          'O241',
-          'O243',
-          'I252',
-          'I241',
-          'A90',
-          'A91',
-          'I731',
-          'I738',
-          'I739',
-          'I743',
-          'I744',
-          'I745',
-          'I201',
-          'I208',
-          'I209',
-          'I200',
-          'N23.X',
-          'A90',
-          'A91'
-        ),
-        code,
-        ukbwranglr::reformat_icd10_codes(
-          icd10_codes = code,
-          ukb_code_mappings = ukb_code_mappings,
-          input_icd10_format = "ICD10_CODE",
-          output_icd10_format = "ALT_CODE")
-      )
-    )
-
   # reformat to the 'ALT-CODE' format in UKB HES data
-  # icd10_df$code <- ukbwranglr::reformat_icd10_codes(
-  #   icd10_codes = icd10_df$code,
-  #   ukb_code_mappings = ukb_code_mappings,
-  #   input_icd10_format = "ICD10_CODE",
-  #   output_icd10_format = "ALT_CODE")
+  icd10_df$code <- ukbwranglr::reformat_icd10_codes(
+    icd10_codes = icd10_df$code,
+    ukb_code_mappings = ukb_code_mappings,
+    input_icd10_format = "ICD10_CODE",
+    output_icd10_format = "ALT_CODE")
 
-  # return(icd10_df)
+  return(icd10_df)
+
+  # TODO - note a few CALIBER icd10 codes are in the ALT_CODE format, and a
+  # couple appear in neither ("A90" and "A91": check if there are any others
+  # like this):
+  # c(
+  #   'I714',
+  #   'I716',
+  #   'I719',
+  #   'I250',
+  #   'I251',
+  #   'I253',
+  #   'I254',
+  #   'I255',
+  #   'I256',
+  #   'I258',
+  #   'I259',
+  #   'O242',
+  #   'G590',
+  #   'G632',
+  #   'H280',
+  #   'H360',
+  #   'M142',
+  #   'N083',
+  #   'O240',
+  #   'O241',
+  #   'O243',
+  #   'I252',
+  #   'I241',
+  #   'A90',
+  #   'A91',
+  #   'I731',
+  #   'I738',
+  #   'I739',
+  #   'I743',
+  #   'I744',
+  #   'I745',
+  #   'I201',
+  #   'I208',
+  #   'I209',
+  #   'I200',
+  #   'N23.X',
+  #   'A90',
+  #   'A91'
+  # )
 }
 
 # functions to map codes from read2 to read3 and icd10 to icd9

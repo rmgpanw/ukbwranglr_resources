@@ -15,7 +15,7 @@ plan(callr)
 # to open it again for editing.
 # Then, run tar_make() to run the pipeline
 
-# for debugging, unhas below and run `tar_make(callr_function = NULL)`
+# for debugging, unhash below and run `tar_make(callr_function = NULL)`
 # tar_option_set(debug = "CALIBER_CODES_STANDARDISED_AND_MAPPED",
 #                cue = tar_cue(mode = "never"))
 
