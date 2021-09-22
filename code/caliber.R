@@ -42,7 +42,7 @@ standardise_primary_care <- purrr::as_mapper(
       values_to = "code"
     ) %>%
     dplyr::mutate(
-      phenotype_source = "caliber"
+      author = "caliber"
     ) %>%
     dplyr::select(
       disease = Disease,
@@ -50,35 +50,35 @@ standardise_primary_care <- purrr::as_mapper(
       category = Category,
       code_type,
       code,
-      phenotype_source
+      author
     )
 )
 
 standardise_secondary_care_icd10 <- purrr::as_mapper(
   ~ .x %>%
     dplyr::mutate(code_type = "icd10",
-           phenotype_source = "caliber") %>%
+           author = "caliber") %>%
     dplyr::select(
       disease = Disease,
       description = ICD10codeDescr,
       category = Category,
       code_type,
       code = ICD10code,
-      phenotype_source
+      author
     )
 )
 
 standardise_secondary_care_opcs4 <- purrr::as_mapper(
   ~ .x %>%
     dplyr::mutate(code_type = "opcs4",
-           phenotype_source = "caliber") %>%
+           author = "caliber") %>%
     dplyr::select(
       disease = Disease,
       description = OPCS4codeDescr,
       category = Category,
       code_type,
       code = 	OPCS4code,
-      phenotype_source
+      author
     )
 )
 
@@ -143,7 +143,7 @@ append_icd10_ALT_CODEs_with_modifiers <- function(df,
         dplyr::mutate(
           disease = DISEASE,
           code_type = "icd10",
-                      phenotype_source = "caliber",
+                      author = "caliber",
                       category = .x) %>%
         dplyr::select(
           disease,
@@ -151,7 +151,7 @@ append_icd10_ALT_CODEs_with_modifiers <- function(df,
           category,
           code_type,
           code,
-          phenotype_source
+          author
         )
     }) %>%
     dplyr::bind_rows() %>%

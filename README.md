@@ -18,5 +18,5 @@ Open an R console and set the root of this repo as the working directory (or ope
 
 # Version details
 
-- Version 0.0.0.9001
-- Files last downloaded 5 May 2021
+- Version 0.0.0.9002
+- Files last downloaded 22 September 2021
