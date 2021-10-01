@@ -88,7 +88,9 @@ list(
   tar_target(UKB_CODE_MAPPINGS,
              get_ukb_code_mappings_direct()),
   tar_target(CALIBER_CODES_STANDARDISED_AND_MAPPED,
-             get_caliber_codes_standardise_and_map(ukb_code_mappings = tar_read(UKB_CODE_MAPPINGS))),
+             get_caliber_codes_standardise_and_map(ukb_code_mappings = tar_read(UKB_CODE_MAPPINGS)) %>%
+               # TODO - this is a temp fix
+               dplyr::select(-phenotype_source)),
   tar_target(UKB_DB_ZIPPED,
              make_ukb_db_zipped(
                tables = list(
