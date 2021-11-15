@@ -1,5 +1,6 @@
 library(targets)
 library(ukbwranglr)
+library(codemapper)
 library(magrittr)
 library(future)
 library(future.callr) # hash if running on SGE cluster
@@ -24,7 +25,7 @@ UKB_DB <- "ukb.db"
 
 # FUNCTIONS ---------------------------------------------------------------
 
-source("code/caliber.R")
+source(file.path("code", "caliber.R"))
 
 #' Write tables to ukb.db
 #'
@@ -87,11 +88,24 @@ list(
              get_ukb_codings_direct()),
   tar_target(UKB_CODE_MAPPINGS,
              get_ukb_code_mappings_direct()),
+  tar_target(
+    ALL_LKPS_MAPS_DB,
+    codemapper::build_all_lkps_maps() %>%
+      codemapper::all_lkps_maps_to_db(db_path = file.path("output", "all_lkps_maps.db"),
+                                      overwrite = TRUE),
+    format = "file"
+  ),
   tar_target(CALIBER_CODES_STANDARDISED_AND_MAPPED,
-             get_caliber_codes_standardise_and_map(ukb_code_mappings = tar_read(UKB_CODE_MAPPINGS)) %>%
-               # TODO - this is a temp fix
-               dplyr::select(-phenotype_source) %>%
-               dplyr::filter(!is.na(author))),
+             {
+               con <- DBI::dbConnect(RSQLite::SQLite(), ALL_LKPS_MAPS_DB)
+               all_lkps_maps <- ukbwranglr::db_tables_to_list(con)
+               on.exit(DBI::dbDisconnect(con))
+
+               get_caliber_codes_standardise_and_map(all_lkps_maps = all_lkps_maps) %>%
+                 # TODO - this is a temp fix
+                 dplyr::select(-phenotype_source) %>%
+                 dplyr::filter(!is.na(author))
+             }),
   tar_target(UKB_DB_ZIPPED,
              make_ukb_db_zipped(
                tables = list(

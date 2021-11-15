@@ -5,3 +5,4 @@ ukb.db
 .Rproj.user
 _targets/meta*
 temp_tests/*
+output/*

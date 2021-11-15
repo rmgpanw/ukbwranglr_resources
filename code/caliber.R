@@ -86,6 +86,7 @@ standardise_secondary_care_opcs4 <- purrr::as_mapper(
 
 get_icd10_codes_with_modifiers <- function(icd10_lkp) {
   icd10_lkp %>%
+    dplyr::collect() %>%
     dplyr::filter(!is.na(MODIFIER_4) | !is.na(MODIFIER_5)) %>%
     # mutate column for codes minus modifiers
     dplyr::mutate(base_code = stringr::str_replace_all(
@@ -96,10 +97,10 @@ get_icd10_codes_with_modifiers <- function(icd10_lkp) {
 }
 
 append_icd10_ALT_CODEs_with_modifiers <- function(df,
-                                                  ukb_code_mappings) {
+                                                  all_lkps_maps) {
 
   # all icd10 codes with modifiers
-  icd10_with_modifiers_all <- get_icd10_codes_with_modifiers(ukb_code_mappings$icd10_lkp)
+  icd10_with_modifiers_all <- get_icd10_codes_with_modifiers(all_lkps_maps$icd10_lkp)
 
   # icd10 codes (base e.g. E10) with modifiers (e.g. E10.0, E10.1 etc) in df
   df_icd10_with_modifiers <- df %>%
@@ -134,9 +135,9 @@ append_icd10_ALT_CODEs_with_modifiers <- function(df,
       expanded_codes <- c(expanded_codes, base_codes_to_expand)
 
       # get descriptions
-      ukbwranglr::lookup_codes(codes = expanded_codes,
+      codemapper::lookup_codes(codes = expanded_codes,
                                code_type = "icd10",
-                               ukb_code_mappings = ukb_code_mappings,
+                               all_lkps_maps = all_lkps_maps,
                                preferred_description_only = TRUE,
                                standardise_output = TRUE,
                                quiet = TRUE) %>%
@@ -196,11 +197,11 @@ reformat_caliber_read2 <- function(read2_df) {
 }
 
 reformat_caliber_icd10 <- function(icd10_df,
-                                   ukb_code_mappings) {
+                                   all_lkps_maps) {
 
   # get all ALT_CODES e.g. E10
   icd10_df <- append_icd10_ALT_CODEs_with_modifiers(df = icd10_df,
-                                                    ukb_code_mappings = ukb_code_mappings)
+                                                    all_lkps_maps = all_lkps_maps)
 
   return(icd10_df)
 
@@ -253,7 +254,7 @@ reformat_caliber_icd10 <- function(icd10_df,
 map_caliber_single_disease_category <- function(df,
                                                 disease,
                                                 disease_category,
-                                                ukb_code_mappings,
+                                                all_lkps_maps,
                                                 from,
                                                 to) {
   # process read codes only - drop medcodes
@@ -261,9 +262,9 @@ map_caliber_single_disease_category <- function(df,
   # map to read3
   df <- df %>%
     purrr::pluck("code") %>%
-    map_codes(from = from,
+    codemapper::map_codes(from = from,
               to = to,
-              ukb_code_mappings = ukb_code_mappings,
+              all_lkps_maps = all_lkps_maps,
               codes_only = FALSE,
               preferred_description_only = TRUE,
               standardise_output = TRUE)
@@ -273,17 +274,17 @@ map_caliber_single_disease_category <- function(df,
     return(NULL)
   }
 
-  reformat_standardised_codelist(
+  codemapper:::reformat_standardised_codelist(
     standardised_codelist = df,
     code_type = to,
     disease = disease,
     disease_category = disease_category,
-    phenotype_source = "caliber"
+    author = "caliber"
   )
 }
 
 map_caliber_multiple_disease_categories <- function(df,
-                                                    ukb_code_mappings,
+                                                    all_lkps_maps,
                                                     from,
                                                     to,
                                                     verbose = TRUE) {
@@ -318,7 +319,7 @@ map_caliber_multiple_disease_categories <- function(df,
           df = disease_category_df,
           disease = disease,
           disease_category = disease_category,
-          ukb_code_mappings = ukb_code_mappings,
+          all_lkps_maps = all_lkps_maps,
           from = from,
           to = to
         )
@@ -350,7 +351,7 @@ read_csv_to_named_list_and_combine <- function(
 
 # MAIN --------------------------------------------------------------------
 
-get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
+get_caliber_codes_standardise_and_map <- function(all_lkps_maps) {
 
 
   # Download caliber repo ---------------------------------------------------
@@ -398,7 +399,7 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
     read_csv_to_named_list_and_combine(CALIBER_SECONDARY,
                            filenames = SECONDARY_CARE_FILES_ICD,
                            standardising_function = standardise_secondary_care_icd10) %>%
-    reformat_caliber_icd10(ukb_code_mappings = ukb_code_mappings)
+    reformat_caliber_icd10(all_lkps_maps = all_lkps_maps)
 
   result$secondary_care_codes_opcs4 <-
     read_csv_to_named_list_and_combine(CALIBER_SECONDARY,
@@ -411,17 +412,17 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
   result$primary_care_codes_read3 <-
     map_caliber_multiple_disease_categories(
       result$primary_care_codes_read2,
-      ukb_code_mappings = ukb_code_mappings,
+      all_lkps_maps = all_lkps_maps,
       from = "read2",
       to = "read3"
     )
 
-  message("Mapping icd10 to icd9 codes")
+  message("Mapping read2 to icd9 codes")
   result$secondary_care_codes_icd9 <-
     map_caliber_multiple_disease_categories(
-      result$secondary_care_codes_icd10,
-      ukb_code_mappings = ukb_code_mappings,
-      from = "icd10",
+      result$primary_care_codes_read2,
+      all_lkps_maps = all_lkps_maps,
+      from = "read2",
       to = "icd9"
     )
 
@@ -430,7 +431,7 @@ get_caliber_codes_standardise_and_map <- function(ukb_code_mappings) {
   result$secondary_care_codes_icd10$code <-
     ukbwranglr::reformat_icd10_codes(
       icd10_codes = result$secondary_care_codes_icd10$code,
-      ukb_code_mappings = ukb_code_mappings,
+      all_lkps_maps = all_lkps_maps,
       input_icd10_format = "ICD10_CODE",
       output_icd10_format = "ALT_CODE"
     )

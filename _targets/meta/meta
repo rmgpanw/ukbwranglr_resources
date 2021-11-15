@@ -16,9 +16,10 @@ diabetes_caliber|object|80f3d6114a912a0c||||||||||||||
 con2|object|6b991ec47f5a5b8f||||||||||||||
 test|object|f7193674c91b5209||||||||||||||
 caliber_codes_dm|object|5c2d39ef81c2e7c5||||||||||||||
-.Random.seed|object|6d4a5d07b2a6e76e||||||||||||||
 hm2|object|db828f4389d4b494||||||||||||||
 con|object|89e9f05f6fd6cf80||||||||||||||
+CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|e48e860913016e6c|5ba585589eb2af34|53685c3225cc3d0d|1156193610||t18901.4518511274s|f6661aacde839ba3|168828|rds|vector|||182.77|Warning The following codes were not found for icd10 K25, K26, K27, K28|
+UKB_DB_ZIPPED|stem|8473557183c1af22|9fc2d056a43b356b|77ec75a42d428d25|-1425916365|ukb.db.zip|t18901.4521394995s|e23f539c3f8cee2d|52029856|file|vector|||23.824||
 get_icd10_codes_with_modifiers|function|2b0fc759642c4641||||||||||||||
 read_csv_as_character|function|1b612d8446a544fe||||||||||||||
 reformat_caliber_read2|function|5a62ff769dff6412||||||||||||||
@@ -27,12 +28,12 @@ standardise_primary_care|function|9a661494cfec1227||||||||||||||
 standardise_secondary_care_icd10|function|3f31b1b5e9241f87||||||||||||||
 standardise_secondary_care_opcs4|function|a902925a4abbcb1a||||||||||||||
 make_ukb_db_zipped|function|0aef26dd6987cb2c||||||||||||||
-map_caliber_single_disease_category|function|94c4898746ae3a3d||||||||||||||
+map_caliber_single_disease_category|function|b2f277a1ea2ce03f||||||||||||||
 UKB_DB|object|aca2db7c1dab86aa||||||||||||||
-append_icd10_ALT_CODEs_with_modifiers|function|3c892c9290f45ff6||||||||||||||
+.Random.seed|object|28975be73d363471||||||||||||||
+append_icd10_ALT_CODEs_with_modifiers|function|903ea326d62ec191||||||||||||||
 read_csv_to_named_list_and_combine|function|201c88e1e8517d1d||||||||||||||
-map_caliber_multiple_disease_categories|function|e5bf49f6f0d6e6ee||||||||||||||
-reformat_caliber_icd10|function|a2fb29a70dc00dd4||||||||||||||
-get_caliber_codes_standardise_and_map|function|39fc6c39a46506a5||||||||||||||
-CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|e48e860913016e6c|5ba585589eb2af34|53685c3225cc3d0d|1156193610||t18901.4518511274s|f6661aacde839ba3|168828|rds|vector|||182.77|Warning The following codes were not found for icd10 K25, K26, K27, K28|
-UKB_DB_ZIPPED|stem|8473557183c1af22|9fc2d056a43b356b|77ec75a42d428d25|-1425916365|ukb.db.zip|t18901.4521394995s|e23f539c3f8cee2d|52029856|file|vector|||23.824||
+map_caliber_multiple_disease_categories|function|0c16d2fee2262730||||||||||||||
+reformat_caliber_icd10|function|423437cb26d5cb00||||||||||||||
+get_caliber_codes_standardise_and_map|function|65c003df8a23b5a8||||||||||||||
+ALL_LKPS_MAPS_DB|stem|c0cc2767ae745076|5c6c03edda9ae420|7601abaaee35d97a|-302853071|output/all_lkps_maps.db|t18946.884095382s|35b0f243d6e88238|315617280|file|vector|||80.572||
