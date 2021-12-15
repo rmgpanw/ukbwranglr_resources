@@ -225,9 +225,7 @@ reformat_caliber_icd10 <- function(icd10_df,
 
   # convert to ALT_CODE format - note, some codes are in ALT_CODE format (e.g.
   # diabetes, 'O24'), while others are in ICD_10 format (e.g. acute kidney
-  # injury, 'N17'). Also note, 3 character codes with no children (e.g. 'A38',
-  # Scarlet fever) should remain unchanged i.e. not end with 'X', unlike the
-  # ALT_CODE format in the  icd10 look up table
+  # injury, 'N17').
   icd10_df <- icd10_df %>%
     dplyr::mutate(
       code = dplyr::case_when(
@@ -238,6 +236,27 @@ reformat_caliber_icd10 <- function(icd10_df,
                                                                                       strip_x = TRUE),
         TRUE ~ .data[["code"]]
       )
+    )
+
+  # TODO - raise issue on caliber repo. Temp fix for single code 'N23.X' here (should just be 'N23' on caliber)
+  icd10_df <- icd10_df %>%
+    dplyr::mutate(code = dplyr::case_when(
+      code == "N23.X" ~ "N23",
+      TRUE ~ code
+    ))
+
+  # 3 character codes with no children (e.g. 'A38', Scarlet fever, 'I10', Essential (primary) hypertension)
+  # need 'X' appended, so that mapping to ICD9 will work
+  icd10_format_3_char_codes <- all_lkps_maps$icd10_lkp %>%
+    dplyr::collect() %>%
+    dplyr::filter(stringr::str_detect(.data[["ALT_CODE"]],
+                                      pattern = "X$")) %>%
+    dplyr::pull(ICD10_CODE)
+
+  icd10_df <- icd10_df %>%
+    dplyr::mutate(
+      code = dplyr::case_when(.data[["code"]] %in% icd10_format_3_char_codes ~ paste0(.data[["code"]], "X"),
+                              TRUE ~ .data[["code"]])
     )
 
   # expand icd 10 codes to include all modifiers, where appropriate e.g. E10, I70.0 (see caliber warning note
@@ -415,14 +434,18 @@ get_caliber_codes_standardise_and_map <- function(all_lkps_maps) {
       to = "read3"
     )
 
-  message("Mapping read2 to icd9 codes")
+  message("Mapping icd10 to icd9 codes")
   result$secondary_care_codes_icd9 <-
     map_caliber_multiple_disease_categories(
-      result$primary_care_codes_read2,
+      result$secondary_care_codes_icd10,
       all_lkps_maps = all_lkps_maps,
-      from = "read2",
+      from = "icd10",
       to = "icd9"
     )
+
+  message("Removing 'X' from ends of 3 character ICD10 codes")
+  result$secondary_care_codes_icd10 <- codemapper:::strip_x_from_alt_icd10(df = result$secondary_care_codes_icd10,
+                                                                           alt_icd10_code_col = "code")
 
   # combine
   message("Concatenating results")

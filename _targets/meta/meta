@@ -30,11 +30,11 @@ make_ukb_db_zipped|function|0aef26dd6987cb2c||||||||||||||
 map_caliber_single_disease_category|function|9f6728537df9ca9b||||||||||||||
 expand_3_char_icd10_codes|function|5704b68b4eaad4e4||||||||||||||
 UKB_DB|object|aca2db7c1dab86aa||||||||||||||
-.Random.seed|object|63104313e2591c6d||||||||||||||
+.Random.seed|object|15b41c2f8a3ecb0d||||||||||||||
 append_icd10_ALT_CODEs_with_modifiers|function|11d43b620ab6ec3d||||||||||||||
 read_csv_to_named_list_and_combine|function|201c88e1e8517d1d||||||||||||||
 map_caliber_multiple_disease_categories|function|6c35a03e44cab413||||||||||||||
-reformat_caliber_icd10|function|b047b295ce9ffeba||||||||||||||
-get_caliber_codes_standardise_and_map|function|9dd25799885cd18f||||||||||||||
-CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|af305e9b0a72944d|64057bce93165d6e|07b5c6ad20ee6efd|1156193610||t18976.5410091069s|6d4b5b1228ceb0b2|329634|rds|vector|||658.183|Warning The following codes were not found for icd9 3581A 2810D|
-UKB_DB_ZIPPED|stem|999990d89acb6482|9fc2d056a43b356b|ac6a7ae2193521f8|-1425916365|ukb.db.zip|t18976.5416162534s|06d83a3b8682242e|52119614|file|vector|||45.06||
+reformat_caliber_icd10|function|3524372cbf781891||||||||||||||
+get_caliber_codes_standardise_and_map|function|65fc1aea601a751a||||||||||||||
+CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|02c9fa6b9f00fc82|64057bce93165d6e|98ba89a73d06ceb7|1156193610||t18976.6416531679s|cda7896f411d902a|316145|rds|vector|||680.643|Warning The following codes were not found for icd10 K25, K26, K27, K28|
+UKB_DB_ZIPPED|stem|78b263591ad2314e|9fc2d056a43b356b|915167de06331080|-1425916365|ukb.db.zip|t18976.6420599514s|867fda8f27282aa6|52154199|file|vector|||26.477||
