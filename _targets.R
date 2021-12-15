@@ -102,8 +102,6 @@ list(
                on.exit(DBI::dbDisconnect(con))
 
                get_caliber_codes_standardise_and_map(all_lkps_maps = all_lkps_maps) %>%
-                 # TODO - this is a temp fix
-                 dplyr::select(-phenotype_source) %>%
                  dplyr::filter(!is.na(author))
              }),
   tar_target(UKB_DB_ZIPPED,

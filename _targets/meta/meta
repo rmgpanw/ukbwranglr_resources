@@ -18,9 +18,8 @@ test|object|f7193674c91b5209||||||||||||||
 caliber_codes_dm|object|5c2d39ef81c2e7c5||||||||||||||
 hm2|object|db828f4389d4b494||||||||||||||
 con|object|89e9f05f6fd6cf80||||||||||||||
-CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|e48e860913016e6c|5ba585589eb2af34|53685c3225cc3d0d|1156193610||t18901.4518511274s|f6661aacde839ba3|168828|rds|vector|||182.77|Warning The following codes were not found for icd10 K25, K26, K27, K28|
-UKB_DB_ZIPPED|stem|8473557183c1af22|9fc2d056a43b356b|77ec75a42d428d25|-1425916365|ukb.db.zip|t18901.4521394995s|e23f539c3f8cee2d|52029856|file|vector|||23.824||
-get_icd10_codes_with_modifiers|function|2b0fc759642c4641||||||||||||||
+ALL_LKPS_MAPS_DB|stem|956e5796ebd3150e|19260e5f57f5b003|9893b7cd6ae3f054|-302853071|output/all_lkps_maps.db|t18949.8407282164s|35b0f243d6e88238|315617280|file|vector|||83.256|The following tables are already present in the database at outputall_lkps_maps.db and will be overwritten icd9_icd10, read_v2_drugs_bnf, read_v2_icd9, read_v2_icd10, read_v2_opcs4, read_v2_read_ctv3, read_ctv3_icd9, read_ctv3_icd10, read_ctv3_opcs4, read_ctv3_read_v2, bnf_dmd, bnf_lkp, bnf_dmd, icd9_lkp, icd10_lkp, read_v2_lkp, read_v2_drugs_lkp, read_ctv3_lkp, opcs4_lkp, self_report_cancer, self_report_medication, self_report_operation, self_report_non_cancer|
+get_icd10_codes_with_modifiers|function|317691e9e72f11f9||||||||||||||
 read_csv_as_character|function|1b612d8446a544fe||||||||||||||
 reformat_caliber_read2|function|5a62ff769dff6412||||||||||||||
 download_caliber_repo|function|c0667e83e2977238||||||||||||||
@@ -28,12 +27,14 @@ standardise_primary_care|function|9a661494cfec1227||||||||||||||
 standardise_secondary_care_icd10|function|3f31b1b5e9241f87||||||||||||||
 standardise_secondary_care_opcs4|function|a902925a4abbcb1a||||||||||||||
 make_ukb_db_zipped|function|0aef26dd6987cb2c||||||||||||||
-map_caliber_single_disease_category|function|b2f277a1ea2ce03f||||||||||||||
+map_caliber_single_disease_category|function|9f6728537df9ca9b||||||||||||||
+expand_3_char_icd10_codes|function|5704b68b4eaad4e4||||||||||||||
 UKB_DB|object|aca2db7c1dab86aa||||||||||||||
-.Random.seed|object|28975be73d363471||||||||||||||
-append_icd10_ALT_CODEs_with_modifiers|function|903ea326d62ec191||||||||||||||
+.Random.seed|object|63104313e2591c6d||||||||||||||
+append_icd10_ALT_CODEs_with_modifiers|function|11d43b620ab6ec3d||||||||||||||
 read_csv_to_named_list_and_combine|function|201c88e1e8517d1d||||||||||||||
-map_caliber_multiple_disease_categories|function|0c16d2fee2262730||||||||||||||
-reformat_caliber_icd10|function|423437cb26d5cb00||||||||||||||
-get_caliber_codes_standardise_and_map|function|65c003df8a23b5a8||||||||||||||
-ALL_LKPS_MAPS_DB|stem|c0cc2767ae745076|5c6c03edda9ae420|7601abaaee35d97a|-302853071|output/all_lkps_maps.db|t18946.884095382s|35b0f243d6e88238|315617280|file|vector|||80.572||
+map_caliber_multiple_disease_categories|function|6c35a03e44cab413||||||||||||||
+reformat_caliber_icd10|function|b047b295ce9ffeba||||||||||||||
+get_caliber_codes_standardise_and_map|function|9dd25799885cd18f||||||||||||||
+CALIBER_CODES_STANDARDISED_AND_MAPPED|stem|af305e9b0a72944d|64057bce93165d6e|07b5c6ad20ee6efd|1156193610||t18976.5410091069s|6d4b5b1228ceb0b2|329634|rds|vector|||658.183|Warning The following codes were not found for icd9 3581A 2810D|
+UKB_DB_ZIPPED|stem|999990d89acb6482|9fc2d056a43b356b|ac6a7ae2193521f8|-1425916365|ukb.db.zip|t18976.5416162534s|06d83a3b8682242e|52119614|file|vector|||45.06||

@@ -99,6 +99,9 @@ get_icd10_codes_with_modifiers <- function(icd10_lkp) {
 append_icd10_ALT_CODEs_with_modifiers <- function(df,
                                                   all_lkps_maps) {
 
+  # approach - identify icd10 codes with modifiers and separate these from those
+  # that do not. For each disease category (codes should only appear once per disease category)
+
   # all icd10 codes with modifiers
   icd10_with_modifiers_all <- get_icd10_codes_with_modifiers(all_lkps_maps$icd10_lkp)
 
@@ -112,6 +115,7 @@ append_icd10_ALT_CODEs_with_modifiers <- function(df,
 
   # append ALT_CODES with modifiers, by disease
   disease_categories <- unique(df_icd10_with_modifiers$category)
+
   df_icd10_with_modifiers <- disease_categories %>%
     purrr::set_names() %>%
     purrr::map(.f = ~ {
@@ -129,37 +133,68 @@ append_icd10_ALT_CODEs_with_modifiers <- function(df,
       # get full set of codes + modifiers for these 'base_codes'
       expanded_codes <- icd10_with_modifiers_all %>%
         dplyr::filter(base_code %in% base_codes_to_expand) %>%
-        .$ICD10_CODE
+        .$ALT_CODE
 
       # add in base codes
       expanded_codes <- c(expanded_codes, base_codes_to_expand)
 
       # get descriptions
-      codemapper::lookup_codes(codes = expanded_codes,
-                               code_type = "icd10",
-                               all_lkps_maps = all_lkps_maps,
-                               preferred_description_only = TRUE,
-                               standardise_output = TRUE,
-                               quiet = TRUE) %>%
+      codemapper::lookup_codes(
+        codes = expanded_codes,
+        code_type = "icd10",
+        all_lkps_maps = all_lkps_maps,
+        preferred_description_only = TRUE,
+        standardise_output = TRUE,
+        quiet = FALSE
+      ) %>%
         dplyr::mutate(
           disease = DISEASE,
           code_type = "icd10",
-                      author = "caliber",
-                      category = .x) %>%
-        dplyr::select(
-          disease,
-          description,
-          category,
-          code_type,
-          code,
-          author
-        )
+          author = "caliber",
+          category = .x
+        ) %>%
+        dplyr::select(disease,
+                      description,
+                      category,
+                      code_type,
+                      code,
+                      author)
     }) %>%
     dplyr::bind_rows() %>%
     dplyr::distinct()
 
   # now re-join to original df
   result <- dplyr::bind_rows(df, df_icd10_with_modifiers)
+
+  return(result)
+}
+
+# TODO - either delete, or keep as test for append_icd10_ALT_CODEs_with_modifiers
+expand_3_char_icd10_codes <- function(icd10_df,
+                                      all_lkps_maps) {
+  # (see caliber warning note
+   # here: https://www.caliberresearch.org/portal/show/diabcomp_hes)
+
+  # validate args
+  # all `code_type` should be 'icd10', with no missing values
+  assertthat::assert_that((length(unique(icd10_df$code_type)) == 1) &&
+                            (unique(icd10_df$code_type) == "icd10"),
+                          msg = "Error! `icd10_df` contains code types that are not 'icd10' (or possibly `NA` values)")
+
+  # expand all codes - icd10 codes should be either length 3 or 4
+  result <- icd10_df %>%
+    dplyr::pull(.data[["code"]]) %>%
+    codemapper::codes_starting_with(code_type = "icd10",
+                                    all_lkps_maps = all_lkps_maps,
+                                    codes_only = FALSE,
+                                    preferred_description_only = TRUE,
+                                    standardise_output = TRUE) %>%
+    dplyr::bind_rows(str_len_3_icd10) %>%
+    tidyr::fill(tidyselect::everything(),
+                .direction = "up")
+
+  assertthat::assert_that(nrow(result) == nrow(na.omit(result)),
+                          msg = "Error when expanding 3 character ICD10 codes! Some cells are `NA`")
 
   return(result)
 }
@@ -173,17 +208,6 @@ reformat_caliber_read2 <- function(read2_df) {
     dplyr::filter(code_type == "Readcode") %>%
     # label as 'read2' (ukbwranglr format)
     dplyr::mutate(code_type = "read2") %>%
-
-    # TO DELETE - not all codes include the primary description e.g. C108.
-
-    # # filter for primary descriptions only: the last 2 characters indicate whether
-    # # description is the  preferred one or not
-    # dplyr::filter(stringr::str_detect(code, ".*00$")) %>%
-    #
-    # # remove last 2 characters
-    # dplyr::mutate(code = stringr::str_replace(code,
-    #                                           pattern = "00$",
-    #                                           replacement = ""))
 
     # remove last 2 characters
     dplyr::mutate(code = stringr::str_sub(code,
@@ -199,55 +223,29 @@ reformat_caliber_read2 <- function(read2_df) {
 reformat_caliber_icd10 <- function(icd10_df,
                                    all_lkps_maps) {
 
-  # get all ALT_CODES e.g. E10
+  # convert to ALT_CODE format - note, some codes are in ALT_CODE format (e.g.
+  # diabetes, 'O24'), while others are in ICD_10 format (e.g. acute kidney
+  # injury, 'N17'). Also note, 3 character codes with no children (e.g. 'A38',
+  # Scarlet fever) should remain unchanged i.e. not end with 'X', unlike the
+  # ALT_CODE format in the  icd10 look up table
+  icd10_df <- icd10_df %>%
+    dplyr::mutate(
+      code = dplyr::case_when(
+        stringr::str_detect(code, pattern = "\\.") ~ codemapper::reformat_icd10_codes(icd10_codes = .data[["code"]],
+                                                                                      all_lkps_maps = all_lkps_maps,
+                                                                                      input_icd10_format = "ICD10_CODE",
+                                                                                      output_icd10_format = "ALT_CODE",
+                                                                                      strip_x = TRUE),
+        TRUE ~ .data[["code"]]
+      )
+    )
+
+  # expand icd 10 codes to include all modifiers, where appropriate e.g. E10, I70.0 (see caliber warning note
+  # here: https://www.caliberresearch.org/portal/show/diabcomp_hes )
   icd10_df <- append_icd10_ALT_CODEs_with_modifiers(df = icd10_df,
                                                     all_lkps_maps = all_lkps_maps)
 
   return(icd10_df)
-
-  # TODO - note a few CALIBER icd10 codes are in the ALT_CODE format, and a
-  # couple appear in neither ("A90" and "A91": check if there are any others
-  # like this):
-  # c(
-  #   'I714',
-  #   'I716',
-  #   'I719',
-  #   'I250',
-  #   'I251',
-  #   'I253',
-  #   'I254',
-  #   'I255',
-  #   'I256',
-  #   'I258',
-  #   'I259',
-  #   'O242',
-  #   'G590',
-  #   'G632',
-  #   'H280',
-  #   'H360',
-  #   'M142',
-  #   'N083',
-  #   'O240',
-  #   'O241',
-  #   'O243',
-  #   'I252',
-  #   'I241',
-  #   'A90',
-  #   'A91',
-  #   'I731',
-  #   'I738',
-  #   'I739',
-  #   'I743',
-  #   'I744',
-  #   'I745',
-  #   'I201',
-  #   'I208',
-  #   'I209',
-  #   'I200',
-  #   'N23.X',
-  #   'A90',
-  #   'A91'
-  # )
 }
 
 # functions to map codes from read2 to read3 and icd10 to icd9
@@ -424,16 +422,6 @@ get_caliber_codes_standardise_and_map <- function(all_lkps_maps) {
       all_lkps_maps = all_lkps_maps,
       from = "read2",
       to = "icd9"
-    )
-
-  message("Switching icd10 codes to ALT_CODE format")
-  # reformat to the 'ALT-CODE' format in UKB HES data
-  result$secondary_care_codes_icd10$code <-
-    ukbwranglr::reformat_icd10_codes(
-      icd10_codes = result$secondary_care_codes_icd10$code,
-      all_lkps_maps = all_lkps_maps,
-      input_icd10_format = "ICD10_CODE",
-      output_icd10_format = "ALT_CODE"
     )
 
   # combine
